@@ -6,14 +6,11 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 13:05:03 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/18 18:10:28 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/19 21:39:50 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <iostream>
-#include <netinet/in.h>
-#include <string.h>
-#include <sys/socket.h>
+#include "../includes/webserv.hpp"
 
 #define PORT 3000
 #define IP INADDR_ANY
@@ -98,6 +95,8 @@ int main() {
     if (bytesRead > 0) {
       buffer[bytesRead] = '\0';
       std::cout << buffer << std::endl;
+      response(newSockFd);
+      close(newSockFd);
     }
   }
 }
