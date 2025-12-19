@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/16 18:13:02 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/19 10:44:50 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,25 @@ public:
 
   // * Destructor
   ~Webserv() {}
+};
+
+// ! RESPONSE
+class Response {
+  // ! private
+private:
+  // ! public
+public:
+  // * Default Constructor
+  Response() {}
+
+  // * Copy Constructor
+  Response(const Response &other) {}
+
+  // * Copy assignment operator
+  Response &operator=(const Response &other) {}
+
+  // * Destructor
+  ~Response() {};
 };
 
 #endif
