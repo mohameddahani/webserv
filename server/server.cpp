@@ -6,13 +6,13 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 13:05:03 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/19 21:39:50 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/20 10:16:18 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/webserv.hpp"
 
-#define PORT 3000
+#define PORT 5000
 #define IP INADDR_ANY
 
 int main() {
@@ -95,7 +95,8 @@ int main() {
     if (bytesRead > 0) {
       buffer[bytesRead] = '\0';
       std::cout << buffer << std::endl;
-      response(newSockFd);
+      std::string request = buffer;
+      response(newSockFd, request);
       close(newSockFd);
     }
   }

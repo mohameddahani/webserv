@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/19 20:57:51 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/20 15:02:17 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,10 +39,40 @@ public:
 
   // * Destructor
   ~Webserv() {}
+
+  // * ENUM
+  enum METHOD {
+    GET,
+    POST,
+    DELETE,
+  };
+
+  enum STATUS_CODE {
+    // * 2xx Success
+    OK = 200,
+    CREATED = 201,
+    NO_CONTENT = 204,
+
+    // * 3xx Redirection
+    MOVED_PERMANENTLY = 301,
+    FOUND = 302,
+
+    // * 4xx Client Error
+    BAD_REQUEST = 400,
+    FORBIDDEN = 403,
+    NOT_FOUND = 404,
+    METHOD_NOT_ALLOWED = 405,
+    PAYLOAD_TOO_LARGE = 413,
+
+    // * 5xx Server Error
+    INTERNAL_SERVER_ERROR = 500,
+    BAD_GATEWAY = 502,
+    GATEWAY_TIMEOUT = 504
+  };
 };
 
 // ! RESPONSE
-class Response {
+class Response: public Webserv {
   // ! private
 private:
   unsigned int statusCode;
@@ -83,10 +113,12 @@ public:
   void setBody(std::string value) { this->body = value; }
 
   // * Methods
-  // size_t getLengthOfBody() {}
+  void GET_METHOD();
+  void POST_METHOD();
+  void DELETE_METHOD();
 };
 
 // * Prototype of functions
-void response(int clientFd);
+void response(int clientFd, std::string req);
 
 #endif
