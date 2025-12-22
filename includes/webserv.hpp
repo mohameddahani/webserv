@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/20 15:02:17 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/21 11:12:41 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <sys/epoll.h>
 
 // * classes
 class Webserv {

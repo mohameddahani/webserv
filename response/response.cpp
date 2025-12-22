@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/20 15:00:17 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/21 09:23:05 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ void response(int clientFd, std::string req) {
       filePath += path + "index.html";
       std::ifstream file(filePath.c_str());
       if (!file.is_open()) {
-        throw std::runtime_error("404 NOT FOUND !");
+        // throw std::runtime_error("404 NOT FOUND !");
       }
 
       while (std::getline(file, line)) {
@@ -66,7 +66,7 @@ void response(int clientFd, std::string req) {
       filePath += path + ".html";
       std::ifstream file(filePath.c_str());
       if (!file.is_open()) {
-        throw std::runtime_error("404 NOT FOUND !");
+        // throw std::runtime_error("404 NOT FOUND !");
       }
 
       while (std::getline(file, line)) {
