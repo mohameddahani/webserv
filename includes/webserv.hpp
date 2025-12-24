@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/23 20:55:14 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/24 21:00:06 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <netinet/in.h>
 #include <sstream>
 #include <string.h>
@@ -39,6 +40,9 @@ class Webserv {
 private:
   // ! public
 public:
+  std::map<std::string, std::string> request;
+  // std::map<std::string, std::string> response;
+
   // * Default Constructor
   Webserv() {}
 
@@ -143,6 +147,7 @@ public:
   // * Getters & Setters
 
   // * Methods
+  void parseRequest(std::string &req);
 };
 
 // ! RESPONSE

@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 13:05:03 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/23 18:45:34 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/24 21:00:33 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,9 @@ void Server::run() {
   if (sockfd < 0) {
     throw std::runtime_error("failed to create a socket !");
   }
+  int option = 1;
+
+  setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
 
   // ! Define a ip and port for socket
   // * let add an address ip and port to server
