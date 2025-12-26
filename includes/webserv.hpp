@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/25 18:43:09 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/26 09:54:55 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,10 +42,11 @@ private:
   // ! public
 public:
   std::map<std::string, std::string> request;
+  std::map<std::string, std::string> mimeTypes;
   // std::map<std::string, std::string> response;
 
   // * Default Constructor
-  Webserv() {}
+  Webserv() { this->initMimeTypes(); }
 
   // * Copy Constructor
   Webserv(const Webserv &other) { (void)other; }
@@ -88,6 +89,9 @@ public:
     BAD_GATEWAY = 502,
     GATEWAY_TIMEOUT = 504
   };
+
+  // * Methods
+  void initMimeTypes();
 };
 
 // ! Server
@@ -163,6 +167,8 @@ private:
   std::string res;
   STATUS_CODE status_code;
   std::string statusLine;
+  std::string contentType;
+  std::string contentLength;
   std::string headers;
   static const std::string serverName;
   std::string body;
@@ -194,24 +200,44 @@ public:
   ~Response() {};
 
   // * Getters & Setters
-  STATUS_CODE getStatusCode() const { return this->status_code; }
   void setStatusCode(STATUS_CODE value) { this->status_code = value; }
+  STATUS_CODE getStatusCode() const { return this->status_code; }
 
-  std::string getStatusLine() const { return this->statusLine; }
   void setStatusLine(const std::string httpV,
                      const std::string &statusCodeDescription) {
     this->statusLine = httpV + " " + statusCodeDescription + "\r\n";
   }
+  std::string getStatusLine() const { return this->statusLine; }
 
-  // std::string getHeaders() const { return this->headers; }
-  // void setHeaders(std::string statusCode, std::string headers){
-  //     this -> headers = this->getStatusCode() + this->h}
+  void setContentType(const std::string &path);
+  std::string getContentType() const { return this->contentType; }
 
-  std::string getBody() const { return this->body; }
-  void setBody(std::string &value) { this->body = value; }
+  void setContentLength(const std::string &body) {
+    size_t len = body.length();
+    std::stringstream ss;
+    ss << len;
+    this->contentLength = "Content-Length: " + ss.str() + "\r\n";
+  };
+  std::string getContentLength() const { return this->contentLength; }
 
-  std::string getRes() const { return this->res; }
-  void setRes(std::string &value) { this->res = value; }
+  std::string getHeaders() const { return this->headers; }
+  void setHeaders() {
+    this->headers = this->getStatusLine() + this->serverName +
+                    this->getContentType() + getContentLength() + "\r\n";
+  }
+
+  void setBody(std::ifstream &file) {
+    std::string line;
+    this->body.clear();
+    while (std::getline(file, line)) {
+      this->body += line + "\n";
+    }
+    this->body += "\n\r";
+  }
+  std::string getBody() const { return this->body + "\r\n"; }
+
+  void setResponse() { this->res = getHeaders() + getBody(); }
+  std::string getResponse() const { return this->res; }
 
   // * Methods
   void GET_METHOD(Request &req);

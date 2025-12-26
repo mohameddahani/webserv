@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/25 20:40:11 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/26 09:56:59 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ void Response::GET_METHOD(Request &req) {
   if (req.path == "/") {
     fullPath += req.path + "index.html";
   } else {
-    fullPath += req.path + ".html";
+    fullPath += req.path;
   }
 
   // * check the file permissions and if the file exist
@@ -55,7 +55,20 @@ void Response::GET_METHOD(Request &req) {
     return;
   }
 
+  // * Content Type
+  this->setContentType(fullPath);
+
   // * Body
+  this->setBody(file);
+
+  // * Content Length
+  this->setContentLength(this->getBody());
+
+  // * merge all headers
+  this->setHeaders();
+
+  // * create response
+  this->setResponse();
 }
 
 // * POST METHOD
@@ -96,6 +109,34 @@ std::string Response::statusCodeDescription(STATUS_CODE statusCode) {
   return "Unknown Status";
 }
 
+// * Get content type
+void Response::setContentType(const std::string &path) {
+  size_t pos = path.rfind(".");
+
+  if (pos == std::string::npos) {
+    this->contentType =
+        "Content-Type: application/octet-stream\r\n"; // * we dont know what
+    // * is the type of
+    // * content
+    return;
+  }
+
+  std::string extention = path.substr(pos);
+
+  std::map<std::string, std::string>::iterator it =
+      this->mimeTypes.find(extention);
+
+  if (it == this->mimeTypes.end()) {
+    this->contentType =
+        "Content-Type: application/octet-stream\r\n"; // * we dont know what
+    // * is the type of
+    // * content
+    return;
+  }
+
+  this->contentType = "Content-Type: " + it->second + "\r\n";
+}
+
 // * Response
 void Response::response(const int clientFd, Request &req) {
   (void)clientFd;
@@ -108,5 +149,5 @@ void Response::response(const int clientFd, Request &req) {
     /* code */
   }
 
-  send(clientFd, this->res.c_str(), this->res.length(), 0);
+  send(clientFd, this->getResponse().c_str(), this->getResponse().length(), 0);
 }
