@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 13:05:03 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/25 13:28:43 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/26 10:11:05 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -173,10 +173,7 @@ void Server::run() {
           std::string request = buffer;
 
           // * Response
-          // response(events[i].data.fd);
           res.response(events[i].data.fd, req);
-          std::cout << "==========Response==========" << std::endl;
-          std::cout << request << std::endl;
 
           epoll_ctl(epfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
           close(events[i].data.fd);
