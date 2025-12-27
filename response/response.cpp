@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/27 18:34:12 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/27 21:08:59 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ const std::string Response::serverName = "webserv/1.0\r\n";
 // <body>
 
 // * GET METHOD
-void Response::GET_METHOD(Request &req) {
+void Response::GET_METHOD(const Request &req) {
   std::string fullPath("pages");
 
   if (req.path == "/") {
@@ -45,40 +45,12 @@ void Response::GET_METHOD(Request &req) {
     this->setStatusCode(this->OK);
   }
 
-  // * status line
-  this->setStatusLine(req.httpV, statusCodeDescription(getStatusCode()));
-
-  // * open file
-  std::ifstream file(fullPath.c_str());
-  if (!file.is_open()) {
-    // todo: show error in browser
-    std::cerr << "Error: file is not open !" << std::endl;
-    file.close();
-    return;
-  }
-
-  // * Content Type
-  this->setContentType(fullPath);
-
-  // * Body
-  this->setBody(file);
-
-  // * Content Length
-
-  // * add the data of post request to body
-
-  // * merge all headers
-  this->setHeaders();
-
-  // * create response
-  this->setResponse();
-
-  // ! close the file
-  file.close();
+  // * Generate response
+  this->generateResponse(req, fullPath);
 }
 
 // * POST METHOD
-void Response::POST_METHOD(Request &req) {
+void Response::POST_METHOD(const Request &req) {
   std::string pathOfDataForm = "pages/post-request-data.html";
   std::string pathOfDataUploads = "uploads";
 
@@ -105,43 +77,16 @@ void Response::POST_METHOD(Request &req) {
     } else {
       this->setStatusCode(this->OK);
     }
-
-    // * status line
-    this->setStatusLine(req.httpV, statusCodeDescription(getStatusCode()));
-
-    // * Content Type
-    this->setContentType(pathOfDataForm);
-
-    // * open file
-    std::ifstream file(pathOfDataForm.c_str());
-    if (!file.is_open()) {
-      // todo: show error in browser
-      std::cerr << "Error: file is not open !" << std::endl;
-      file.close();
-      return;
-    }
-
-    // * Body
-    this->setBody(file);
-
-    // * Content Length
-    this->setContentLength(this->getBody());
-
-    // * add the data of post request to body
-
-    // * merge all headers
-    this->setHeaders();
-
-    // * create response
-    this->setResponse();
-
-    // ! close the file
-    file.close();
+  } else if (postContentType == "multipart/form-data") { // ? (img, video, ...)
+    // logic
   }
+
+  // * Generate response
+  this->generateResponse(req, pathOfDataForm);
 }
 
 // * DELETE METHOD
-void Response::DELETE_METHOD(Request &req) { (void)req; }
+void Response::DELETE_METHOD(const Request &req) { (void)req; }
 
 // * Status code description
 std::string Response::statusCodeDescription(STATUS_CODE statusCode) {
@@ -203,8 +148,44 @@ void Response::setContentType(const std::string &path) {
   this->contentType = "Content-Type: " + it->second + "\r\n";
 }
 
+// * Generate response
+void Response::generateResponse(const Request &req, std::string &path) {
+  // * status line
+  this->setStatusLine(req.httpV, statusCodeDescription(getStatusCode()));
+
+  // * open file
+  std::ifstream file(path.c_str());
+  if (!file.is_open()) {
+    // todo: show error in browser
+    std::cerr << "Error: file is not open !" << std::endl;
+    file.close();
+    return;
+  }
+
+  // * Content Type
+  this->setContentType(path);
+
+  // * add the data of post request to body
+  // todo: add data in post-request-data.html
+
+  // * Body
+  this->setBody(file);
+
+  // * Content Length
+  this->setContentLength(this->getBody());
+
+  // * merge all headers
+  this->setHeaders();
+
+  // * create response
+  this->setResponse();
+
+  // ! close the file
+  file.close();
+}
+
 // * Response
-void Response::response(const int clientFd, Request &req) {
+void Response::response(const int clientFd, const Request &req) {
   (void)clientFd;
 
   if (req.method == GET) {

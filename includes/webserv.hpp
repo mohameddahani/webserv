@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/27 18:42:37 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/27 21:07:21 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -203,11 +203,12 @@ class Response : public Webserv {
     std::string getResponse() const { return this->res; }
 
     // * Methods
-    void GET_METHOD(Request &req);
-    void POST_METHOD(Request &req);
-    void DELETE_METHOD(Request &req);
+    void GET_METHOD(const Request &req);
+    void POST_METHOD(const Request &req);
+    void DELETE_METHOD(const Request &req);
     std::string statusCodeDescription(STATUS_CODE statusCode);
-    void response(const int clientFd, Request &req);
+    void generateResponse(const Request &req, std::string &path);
+    void response(const int clientFd, const Request &req);
 };
 
 // * Prototype of functions
