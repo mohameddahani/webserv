@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/26 09:56:59 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/27 18:34:12 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,9 @@ void Response::GET_METHOD(Request &req) {
   // * open file
   std::ifstream file(fullPath.c_str());
   if (!file.is_open()) {
+    // todo: show error in browser
     std::cerr << "Error: file is not open !" << std::endl;
+    file.close();
     return;
   }
 
@@ -62,20 +64,84 @@ void Response::GET_METHOD(Request &req) {
   this->setBody(file);
 
   // * Content Length
-  this->setContentLength(this->getBody());
+
+  // * add the data of post request to body
 
   // * merge all headers
   this->setHeaders();
 
   // * create response
   this->setResponse();
+
+  // ! close the file
+  file.close();
 }
 
 // * POST METHOD
-void Response::POST_METHOD() {}
+void Response::POST_METHOD(Request &req) {
+  std::string pathOfDataForm = "pages/post-request-data.html";
+  std::string pathOfDataUploads = "uploads";
+
+  // * check content type
+  std::string postContentType = "";
+
+  std::map<std::string, std::string>::const_iterator it =
+      req.getRequest().find("Content-Type");
+  if (it != req.getRequest().end()) {
+    postContentType = it->second;
+  }
+
+  // * handle all content type
+  // ? html form this is not plain human text like HTML
+  // ? (email=mdahani%40student.1337.ma&password=1337)
+  if (postContentType == "application/x-www-form-urlencoded") {
+    // * check the file permissions and if the file exist
+    if (access(pathOfDataForm.c_str(), F_OK) == -1) {
+      this->setStatusCode(this->NOT_FOUND);
+      pathOfDataForm = "pages/errors/404.html";
+    } else if (access(pathOfDataForm.c_str(), R_OK) == -1) {
+      this->setStatusCode(this->FORBIDDEN);
+      pathOfDataForm = "pages/errors/403.html";
+    } else {
+      this->setStatusCode(this->OK);
+    }
+
+    // * status line
+    this->setStatusLine(req.httpV, statusCodeDescription(getStatusCode()));
+
+    // * Content Type
+    this->setContentType(pathOfDataForm);
+
+    // * open file
+    std::ifstream file(pathOfDataForm.c_str());
+    if (!file.is_open()) {
+      // todo: show error in browser
+      std::cerr << "Error: file is not open !" << std::endl;
+      file.close();
+      return;
+    }
+
+    // * Body
+    this->setBody(file);
+
+    // * Content Length
+    this->setContentLength(this->getBody());
+
+    // * add the data of post request to body
+
+    // * merge all headers
+    this->setHeaders();
+
+    // * create response
+    this->setResponse();
+
+    // ! close the file
+    file.close();
+  }
+}
 
 // * DELETE METHOD
-void Response::DELETE_METHOD() {}
+void Response::DELETE_METHOD(Request &req) { (void)req; }
 
 // * Status code description
 std::string Response::statusCodeDescription(STATUS_CODE statusCode) {
@@ -144,10 +210,11 @@ void Response::response(const int clientFd, Request &req) {
   if (req.method == GET) {
     this->GET_METHOD(req);
   } else if (req.method == POST) {
-    /* code */
+    this->POST_METHOD(req);
   } else if (req.method == DELETE) {
     /* code */
   }
 
+  // * send Response
   send(clientFd, this->getResponse().c_str(), this->getResponse().length(), 0);
 }
