@@ -3,164 +3,126 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
+/*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/26 09:54:55 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/27 17:37:01 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef WEBSERV_HPP
-#define WEBSERV_HPP
+# define WEBSERV_HPP
+# include <climits>
+# include <ctime>
+# include <fcntl.h>
+# include <fstream>
+# include <iostream>
+# include <map>
+# include <netinet/in.h>
+# include <sstream>
+# include <string.h>
+# include <sys/epoll.h>
+# include <sys/socket.h>
+# include <unistd.h>
+# define PORT 8080
+# define IP INADDR_ANY
+# define MAX_LISTEN 4096
+# define MAX_BUFFER_SIZE 4096
+# define MAX_EVENTS 1024
 
-// * includes
-#include <climits>
-#include <ctime>
-#include <fcntl.h>
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <netinet/in.h>
-#include <sstream>
-#include <string.h>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
-// * MACROS
-#define PORT 8080
-#define IP INADDR_ANY
-#define MAX_LISTEN 4096
-#define MAX_BUFFER_SIZE 4096
-#define MAX_EVENTS 1024
+// ****************************************************************************** //
+//                                  Webserv Class                                 //
+// ****************************************************************************** //
 
-// * classes
-// ! WEBSERV
 class Webserv {
-  // ! private
-private:
-  // ! public
-public:
-  std::map<std::string, std::string> request;
-  std::map<std::string, std::string> mimeTypes;
-  // std::map<std::string, std::string> response;
 
-  // * Default Constructor
-  Webserv() { this->initMimeTypes(); }
+	public:
+		std::map<std::string, std::string>	request;
+		std::map<std::string, std::string>	mimeTypes;
+		// std::map<std::string, std::string> response;
 
-  // * Copy Constructor
-  Webserv(const Webserv &other) { (void)other; }
+		Webserv();
+		Webserv(const Webserv &other);
+		Webserv	&operator=(const Webserv &other);
+		~Webserv();
 
-  // * Copy assignment operator
-  Webserv &operator=(const Webserv &other) {
-    (void)other;
-    return *this;
-  }
+		// * ENUM
+		enum METHOD {
+			GET,
+			POST,
+			DELETE,
+		};
 
-  // * Destructor
-  ~Webserv() {}
+		enum STATUS_CODE {
+			// * 2xx Success
+			OK = 200,
+			CREATED = 201,
+			NO_CONTENT = 204,
 
-  // * ENUM
-  enum METHOD {
-    GET,
-    POST,
-    DELETE,
-  };
+			// * 3xx Redirection
+			MOVED_PERMANENTLY = 301,
+			FOUND = 302,
 
-  enum STATUS_CODE {
-    // * 2xx Success
-    OK = 200,
-    CREATED = 201,
-    NO_CONTENT = 204,
+			// * 4xx Client Error
+			BAD_REQUEST = 400,
+			FORBIDDEN = 403,
+			NOT_FOUND = 404,
+			METHOD_NOT_ALLOWED = 405,
+			PAYLOAD_TOO_LARGE = 413,
 
-    // * 3xx Redirection
-    MOVED_PERMANENTLY = 301,
-    FOUND = 302,
+			// * 5xx Server Error
+			INTERNAL_SERVER_ERROR = 500,
+			BAD_GATEWAY = 502,
+			GATEWAY_TIMEOUT = 504
+		};
 
-    // * 4xx Client Error
-    BAD_REQUEST = 400,
-    FORBIDDEN = 403,
-    NOT_FOUND = 404,
-    METHOD_NOT_ALLOWED = 405,
-    PAYLOAD_TOO_LARGE = 413,
+		// member functions
+		void	initMimeTypes();
 
-    // * 5xx Server Error
-    INTERNAL_SERVER_ERROR = 500,
-    BAD_GATEWAY = 502,
-    GATEWAY_TIMEOUT = 504
-  };
-
-  // * Methods
-  void initMimeTypes();
 };
 
-// ! Server
+
+// ****************************************************************************** //
+//                                  Server Class                                  //
+// ****************************************************************************** //
+
 class Server : public Webserv {
-  // ! private
-private:
-  int sockfd;
-  // ! public
-public:
-  // * Default Constructor
-  Server() : sockfd(-1) {}
 
-  // * Copy Constructor
-  Server(const Server &other) : Webserv(other), sockfd(-1) {}
+	private:
+		int	_sockfd;
 
-  // * Copy assignment operator
-  Server &operator=(const Server &other) {
-    if (this != &other) {
-      this->sockfd = other.sockfd;
-    }
-    return *this;
-  }
+	public:
+		Server();
 
-  // * Destructor
-  ~Server() {};
+		int		getSockFd() const;
+		void	setSockFd(int fd);
+		void	run();
 
-  // * Getters & Setters
-  int getSockFd() const { return this->sockfd; };
-  void setSockFd(int value) { this->sockfd = value; };
-
-  // * Methods
-  void run();
 };
 
-// ! REQUEST
+
+// ****************************************************************************** //
+//                                 Request Class                                  //
+// ****************************************************************************** //
+
 class Request : public Webserv {
-  // ! private
-private:
-  // ! public
-public:
-  METHOD method;
-  std::string path;
-  std::string httpV;
 
-  // * Default Constructor
-  Request() {}
+	public:
+		METHOD		method;
+		std::string	path;
+		std::string	httpV;
 
-  // * Copy Constructor
-  Request(const Request &other) : Webserv(other) {}
+		void	setRequest(const std::string &req);
+		const	std::map<std::string, std::string> &getRequest() const;
 
-  // * Copy assignment operator
-  Request &operator=(const Request &other) {
-    if (this != &other) {
-      // logic
-    }
-    return *this;
-  }
-
-  // * Destructor
-  ~Request() {};
-
-  // * Getters & Setters
-  void setRequest(const std::string &req);
-  const std::map<std::string, std::string> &getRequest() const;
-
-  // * Methods
 };
 
-// ! RESPONSE
+
+// ****************************************************************************** //
+//                                 Response Class                                 //
+// ****************************************************************************** //
+
 class Response : public Webserv {
   // ! private
 private:

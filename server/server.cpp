@@ -3,14 +3,31 @@
 /*                                                        :::      ::::::::   */
 /*   server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
+/*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 13:05:03 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/26 10:11:05 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/27 17:25:22 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/webserv.hpp"
+
+
+// Default constructor
+Server::Server()
+{
+	_sockfd = -1;
+}
+
+int	Server::getSockFd() const
+{
+	return (_sockfd);
+}
+
+void	Server::setSockFd(int fd)
+{
+	this->_sockfd = fd;
+}
 
 // * Methods
 
