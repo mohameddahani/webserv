@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/27 21:08:59 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/28 12:04:37 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,6 +120,30 @@ std::string Response::statusCodeDescription(STATUS_CODE statusCode) {
   return "Unknown Status";
 }
 
+// * parse form URL encoded
+std::map<std::string, std::string>
+Response::parseFormURLEncoded(const std::string &post_body) {
+  std::map<std::string, std::string> result;
+
+  std::stringstream ss(post_body);
+  std::string line;
+
+  while (std::getline(ss, line, '&')) {
+    size_t pos = line.find("=");
+
+    if (pos == std::string::npos) {
+      continue;
+    }
+
+    std::string key = line.substr(0, pos);
+    std::string value = line.substr(pos + 1);
+
+    result[key] = value;
+  }
+
+  return result;
+}
+
 // * Get content type
 void Response::setContentType(const std::string &path) {
   size_t pos = path.rfind(".");
@@ -170,6 +194,49 @@ void Response::generateResponse(const Request &req, std::string &path) {
 
   // * Body
   this->setBody(file);
+  if (req.method == POST) { // ? add raw data if method is post
+    size_t pos = this->getBody().find("<!-- raw data -->\n");
+    if (pos != std::string::npos) {
+      // * get post body
+      std::string post_body =
+          req.getRequest().count("post-body")
+              ? req.getRequest().find("post-body")->second + "\n"
+              : "";
+
+      // * add raw data to html file
+      this->addDataToBody(pos + strlen("<!-- raw data -->\n"), post_body);
+
+      // * add parsed data to file html
+      std::map<std::string, std::string> parsedData =
+          this->parseFormURLEncoded(post_body);
+
+      pos = this->getBody().find("<!-- parsed data -->\n");
+      if (pos != std::string::npos) {
+        // * skip the comment of html
+        pos += strlen("<!-- parsed data -->\n");
+        // * merge data with html and send it
+        std::map<std::string, std::string>::iterator itParsedData =
+            parsedData.begin();
+        for (; itParsedData != parsedData.end(); ++itParsedData) {
+          post_body.clear();
+          post_body.clear();
+
+          post_body = "<div class=\"flex justify-between bg-zinc-800 px-4 py-2 "
+                      "rounded\">\n"
+                      "<span class=\"text-blue-400 font-medium\">" +
+                      itParsedData->first + "</span>\n";
+
+          post_body += "<span class=\"text-white\">" + itParsedData->second +
+                       "</span>\n"
+                       "</div>\n";
+
+          this->addDataToBody(pos, post_body);
+          // * update position
+          pos += post_body.length();
+        }
+      }
+    }
+  }
 
   // * Content Length
   this->setContentLength(this->getBody());
@@ -193,7 +260,9 @@ void Response::response(const int clientFd, const Request &req) {
   } else if (req.method == POST) {
     this->POST_METHOD(req);
   } else if (req.method == DELETE) {
-    /* code */
+    this->DELETE_METHOD(req);
+  } else {
+    this->methodNotAllowed();
   }
 
   // * send Response

@@ -6,122 +6,123 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/27 21:07:21 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/28 12:05:18 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef WEBSERV_HPP
-# define WEBSERV_HPP
-# include <climits>
-# include <ctime>
-# include <fcntl.h>
-# include <fstream>
-# include <iostream>
-# include <map>
-# include <netinet/in.h>
-# include <sstream>
-# include <string.h>
-# include <sys/epoll.h>
-# include <sys/socket.h>
-# include <unistd.h>
-# define PORT 8080
-# define IP INADDR_ANY
-# define MAX_LISTEN 4096
-# define MAX_BUFFER_SIZE 4096
-# define MAX_EVENTS 1024
+#define WEBSERV_HPP
+#include <climits>
+#include <ctime>
+#include <fcntl.h>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <netinet/in.h>
+#include <sstream>
+#include <string.h>
+#include <sys/epoll.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#define PORT 8080
+#define IP INADDR_ANY
+#define MAX_LISTEN 4096
+#define MAX_BUFFER_SIZE 4096
+#define MAX_EVENTS 1024
 
-
-// ****************************************************************************** //
-//                                  Webserv Class                                 //
-// ****************************************************************************** //
+// ******************************************************************************
+// //
+//                                  Webserv Class //
+// ******************************************************************************
+// //
 
 class Webserv {
 
-	public:
-		std::map<std::string, std::string>	request;
-		std::map<std::string, std::string>	mimeTypes;
-		// std::map<std::string, std::string> response;
+  public:
+    std::map<std::string, std::string> request;
+    std::map<std::string, std::string> mimeTypes;
+    // std::map<std::string, std::string> response;
 
-		Webserv();
-		Webserv(const Webserv &other);
-		Webserv	&operator=(const Webserv &other);
-		~Webserv();
+    Webserv();
+    Webserv(const Webserv &other);
+    Webserv &operator=(const Webserv &other);
+    ~Webserv();
 
-		// * ENUM
-		enum METHOD {
-			GET,
-			POST,
-			DELETE,
-		};
+    // * ENUM
+    enum METHOD {
+      GET,
+      POST,
+      DELETE,
+    };
 
-		enum STATUS_CODE {
-			// * 2xx Success
-			OK = 200,
-			CREATED = 201,
-			NO_CONTENT = 204,
+    enum STATUS_CODE {
+      // * 2xx Success
+      OK = 200,
+      CREATED = 201,
+      NO_CONTENT = 204,
 
-			// * 3xx Redirection
-			MOVED_PERMANENTLY = 301,
-			FOUND = 302,
+      // * 3xx Redirection
+      MOVED_PERMANENTLY = 301,
+      FOUND = 302,
 
-			// * 4xx Client Error
-			BAD_REQUEST = 400,
-			FORBIDDEN = 403,
-			NOT_FOUND = 404,
-			METHOD_NOT_ALLOWED = 405,
-			PAYLOAD_TOO_LARGE = 413,
+      // * 4xx Client Error
+      BAD_REQUEST = 400,
+      FORBIDDEN = 403,
+      NOT_FOUND = 404,
+      METHOD_NOT_ALLOWED = 405,
+      PAYLOAD_TOO_LARGE = 413,
 
-			// * 5xx Server Error
-			INTERNAL_SERVER_ERROR = 500,
-			BAD_GATEWAY = 502,
-			GATEWAY_TIMEOUT = 504
-		};
+      // * 5xx Server Error
+      INTERNAL_SERVER_ERROR = 500,
+      BAD_GATEWAY = 502,
+      GATEWAY_TIMEOUT = 504
+    };
 
-		// * member functions
-		void	initMimeTypes();
-
+    // * member functions
+    void initMimeTypes();
 };
 
-
-// ****************************************************************************** //
-//                                  Server Class                                  //
-// ****************************************************************************** //
+// ******************************************************************************
+// //
+//                                  Server Class //
+// ******************************************************************************
+// //
 
 class Server : public Webserv {
 
-	private:
-		int	_sockfd;
+  private:
+    int _sockfd;
 
-	public:
-		Server();
+  public:
+    Server();
 
-		int		getSockFd() const;
-		void	setSockFd(int fd);
-		void	run();
-
+    int getSockFd() const;
+    void setSockFd(int fd);
+    void run();
 };
 
-
-// ****************************************************************************** //
-//                                 Request Class                                  //
-// ****************************************************************************** //
+// ******************************************************************************
+// //
+//                                 Request Class //
+// ******************************************************************************
+// //
 
 class Request : public Webserv {
 
-	public:
-		METHOD		method;
-		std::string	path;
-		std::string	httpV;
+  public:
+    METHOD method;
+    std::string path;
+    std::string httpV;
 
-		void	setRequest(const std::string &req);
-		const	std::map<std::string, std::string> &getRequest() const;
-
+    void setRequest(const std::string &req);
+    const std::map<std::string, std::string> &getRequest() const;
 };
 
-
-// ****************************************************************************** //
-//                                 Response Class                                 //
-// ****************************************************************************** //
+// ******************************************************************************
+// //
+//                                 Response Class //
+// ******************************************************************************
+// //
 
 class Response : public Webserv {
     // ! private
@@ -198,6 +199,9 @@ class Response : public Webserv {
       this->body += "\n\r";
     }
     std::string getBody() const { return this->body + "\r\n"; }
+    void addDataToBody(size_t pos, std::string &data) {
+      this->body.insert(pos, data);
+    }
 
     void setResponse() { this->res = getHeaders() + getBody(); }
     std::string getResponse() const { return this->res; }
@@ -207,7 +211,10 @@ class Response : public Webserv {
     void POST_METHOD(const Request &req);
     void DELETE_METHOD(const Request &req);
     std::string statusCodeDescription(STATUS_CODE statusCode);
+    std::map<std::string, std::string>
+    parseFormURLEncoded(const std::string &post_body);
     void generateResponse(const Request &req, std::string &path);
+    void methodNotAllowed() {};
     void response(const int clientFd, const Request &req);
 };
 
