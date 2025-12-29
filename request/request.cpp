@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 20:48:07 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/29 09:46:14 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/29 17:23:29 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,28 +35,28 @@ void Request::setRequest(const std::string &req) {
     firstLine >> this->path >> this->httpV;
   }
 
-  // * store request on map
+  // * get the headers
   std::string key, value;
   while (std::getline(ss, line)) {
     size_t pos = line.find(":");
     if (pos == std::string::npos) {
-      // * this case for store post header
-      if (this->method == POST) {
-        std::getline(ss, line);
-      } else {
-        continue;
-      }
+      break;
     }
 
-    // * create a key and value by method
-    if (this->method == POST) {
-      key = "post-body";
-      value = line;
-    } else {
-      key = line.substr(0, pos);
-      value = line.substr(pos + 2, line.length());
-    }
+    key = line.substr(0, pos);
+    value = line.substr(pos + 2, line.length());
 
+    this->request[key] = value;
+  }
+
+  // * get the body
+  key = "post-body";
+  value.clear();
+  while (std::getline(ss, line)) {
+    value += line;
+  }
+
+  if (!value.empty()) {
     this->request[key] = value;
   }
 }

@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/29 11:26:14 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/29 17:23:09 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -138,13 +138,10 @@ void Response::POST_METHOD(const Request &req) {
   std::string pathOfDataUploads = "uploads";
 
   // * check content type
-  std::string postContentType = "";
-
-  std::map<std::string, std::string>::const_iterator it =
-      req.getRequest().find("Content-Type");
-  if (it != req.getRequest().end()) {
-    postContentType = it->second;
-  }
+  std::string postContentType =
+      req.getRequest().count("Content-Type")
+          ? req.getRequest().find("Content-Type")->second
+          : "";
 
   // * handle all content type
   // ? html form this is not plain human text like HTML
@@ -161,9 +158,7 @@ void Response::POST_METHOD(const Request &req) {
       this->setStatusCode(this->OK);
     }
   } else if (postContentType == "multipart/form-data") { // ? (img, video, ...)
-    // logic
   }
-
   // * Generate response
   this->generateResponse(req, pathOfDataForm);
 }
@@ -262,7 +257,18 @@ void Response::generateResponse(const Request &req, std::string &path) {
   // * Body
   this->setBody(file);
   // ? body of post method
-  if (req.method == POST) { // ? add raw data if method is post
+  if (req.method == POST) {
+    // * get content type to decide which response will send in post method
+    // std::string contentType =
+    //     req.getRequest().count("Content-Type")
+    //         ? req.getRequest().find("Content-Type")->second
+    //         : "";
+    // if (contentType ==) {
+    //   /* code */
+    // }
+
+    // ? add raw data if method is post and content type is
+    // ? application/x-www-form-urlencoded
     size_t pos = this->getBody().find("<!-- raw data -->\n");
     if (pos != std::string::npos) {
       // * get post body
