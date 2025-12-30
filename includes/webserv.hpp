@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/27 17:37:01 by mait-all         ###   ########.fr       */
+/*   Updated: 2025/12/28 10:07:08 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,13 +20,14 @@
 # include <map>
 # include <netinet/in.h>
 # include <sstream>
-# include <string.h>
+# include <cstring>
 # include <sys/epoll.h>
 # include <sys/socket.h>
 # include <unistd.h>
 # define PORT 8080
 # define IP INADDR_ANY
-# define MAX_LISTEN 4096
+# define IPv4 AF_INET
+# define BACK_LOG 4096
 # define MAX_BUFFER_SIZE 4096
 # define MAX_EVENTS 1024
 
@@ -79,6 +80,7 @@ class Webserv {
 
 		// member functions
 		void	initMimeTypes();
+		void	throwError(std::string func);
 
 };
 

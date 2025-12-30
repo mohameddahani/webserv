@@ -374,3 +374,7 @@ char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\n
 ```
 
 Consider to calculate how many bytes (`Content-Length`) you're trying to send in Body, and also the type of data you're sending (`Content-Type`).
+
+
+
+## Blocking and Non Blocking Concepts

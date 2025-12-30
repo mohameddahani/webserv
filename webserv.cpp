@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 08:46:45 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/27 15:46:43 by mait-all         ###   ########.fr       */
+/*   Updated: 2025/12/28 09:41:29 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,12 @@ Webserv::~Webserv()
 {
 }
 
-void Webserv::initMimeTypes() {
+void	Webserv::throwError(std::string func)
+{
+	throw std::runtime_error(func + "failed: " + strerror(errno));
+}
+
+void	Webserv::initMimeTypes() {
   // * text
   this->mimeTypes[".html"] = "text/html";
   this->mimeTypes[".htm"] = "text/html";
