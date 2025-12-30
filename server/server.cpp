@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 13:05:03 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/30 16:28:08 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/30 21:42:07 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,8 +177,6 @@ void Server::run() {
           epoll_ctl(epfd, EPOLL_CTL_MOD, clientFd, &clientEv);
         }
         if (events[i].events & EPOLLOUT) { // * EPOLLIN or EPOLLERR
-          std::string request = buffer;
-
           // * Response
           res.response(req);
 
