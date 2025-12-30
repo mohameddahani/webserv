@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/27 20:44:41 by mait-all          #+#    #+#             */
-/*   Updated: 2025/12/30 21:22:31 by mait-all         ###   ########.fr       */
+/*   Updated: 2025/12/30 21:33:22 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,13 +47,13 @@ void	Server::setNonBlocking(int fd)
 void	Server::run() {
 	Request				req;
 	Response			res;
-	int					sockfd;
-	int					connSock;
-	int					epollfd;
-	int					nfds;
+	int					server_fd;
+	int					client_fd;
+	int					epoll_fd;
+	int					n_fds;
 	int					opt;
 	struct sockaddr_in	server_addr;
-	socklen_t			addrlen;
+	socklen_t			server_len;
 	struct epoll_event	ev, events[MAX_EVENTS];
 	const char 				*hello="HTTP/1.1 200 OK\r\n"
 	                    			"Content-Type: text/plain\r\n"
@@ -67,67 +67,67 @@ void	Server::run() {
 	server_addr.sin_port = htons(PORT);
 	std::memset(server_addr.sin_zero, 0, sizeof(server_addr.sin_zero));
 	opt = 1;
-	addrlen = sizeof(server_addr);
+	server_len = sizeof(server_addr);
 
 	// Socket Creation
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0)
+	server_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (server_fd < 0)
 		throwError("socket()");
 	
-	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		throwError("setsocketopt()");
 
 	// Set socketfd to Non-blocking mode
-	setNonBlocking(sockfd);
+	setNonBlocking(server_fd);
 	
 	// Socket Identification
-	if (bind(sockfd, (struct sockaddr *)&server_addr, addrlen) < 0)
+	if (bind(server_fd, (struct sockaddr *)&server_addr, server_len) < 0)
 		throwError("bind()");
 
 	// Listen for incoming connections
-	if (listen(sockfd, BACK_LOG) < 0)
+	if (listen(server_fd, BACK_LOG) < 0)
 		throwError("listen()");
 	
-	epollfd = epoll_create(1024);
-	if (epollfd < 0)
+	epoll_fd = epoll_create(1024);
+	if (epoll_fd < 0)
 		throwError("epoll_create()");
 	
 	ev.events = EPOLLIN;
-	ev.data.fd = sockfd;
-	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, sockfd, &ev) < 0)
-		throwError("epoll_ctl(sockfd)");
+	ev.data.fd = server_fd;
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &ev) < 0)
+		throwError("epoll_ctl(server_fd)");
 	
 	bool	running = true;
 	while (running)
 	{
-		nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);
-		if (nfds < 0)
+		n_fds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+		if (n_fds < 0)
 			throwError("epoll_wait()");
 		
-		for (int i = 0; i < nfds ; i++)
+		for (int i = 0; i < n_fds ; i++)
 		{
-			if (events[i].data.fd == sockfd)
+			if (events[i].data.fd == server_fd)
 			{
 				while (true)
 				{
 					struct sockaddr_in	client_addr;
 					socklen_t			client_len = sizeof(client_addr);
-					connSock = accept(sockfd, (struct sockaddr *)&client_addr, &client_len);
-					if (connSock < 0) // note: if accept sets errno to EAGAIN OR EWOULDBLOCK means it processed all incomming connections
+					client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len);
+					if (client_fd < 0) // note: if accept sets errno to EAGAIN OR EWOULDBLOCK means it processed all incomming connections
 						break;		  //	   else it fails and we should throw, but checking errno is forbidden here.
 				}
 				
-				setNonBlocking(connSock);
+				setNonBlocking(client_fd);
 				ev.events = EPOLLIN | EPOLLET;
-				ev.data.fd = connSock;
-				if (epoll_ctl(epollfd, EPOLL_CTL_ADD, connSock, &ev) < 0)
-					throwError("epoll_ctl(connSock)");
+				ev.data.fd = client_fd;
+				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) < 0)
+					throwError("epoll_ctl(client_fd)");
 			}
 			else
 			{
 				char	buffer[MAX_BUFFER_SIZE];
 				size_t	bytesReaded;
-				bytesReaded = recv(connSock, buffer, MAX_BUFFER_SIZE - 1, 0);
+				bytesReaded = recv(client_fd, buffer, MAX_BUFFER_SIZE - 1, 0);
 				if (bytesReaded < 0)
 					throwError("recv()");
 				buffer[bytesReaded] = '\0';
@@ -146,14 +146,14 @@ void	Server::run() {
 				send(events[i].data.fd, hello, std::strlen(hello), 0);
 				
 				close(events[i].data.fd);
-				epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+				epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
 			}
 		}
 		
 	}
 	
-	close(sockfd);
-	close(epollfd);
+	close(server_fd);
+	close(epoll_fd);
 		
 // 	bool	running = true;
 // 	while (running)
