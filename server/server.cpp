@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/27 20:44:41 by mait-all          #+#    #+#             */
-/*   Updated: 2025/12/30 11:50:08 by mait-all         ###   ########.fr       */
+/*   Updated: 2025/12/30 20:54:14 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,17 @@ void	Server::setSockFd(int fd)
 }
 
 // * Methods
+
+void	Server::setNonBlocking(int fd)
+{
+	int	flags;
+
+	flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1)
+		throwError("fcntl(F_GETFL)");
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
+		throwError("fcntl(F_SETFL)");
+}
 
 void	Server::run() {
 	Request				req;
@@ -62,9 +73,12 @@ void	Server::run() {
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0)
 		throwError("socket()");
-	fcntl(sockfd, F_SETFL, O_NONBLOCK);
+	
 	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		throwError("setsocketopt()");
+
+	// Set socketfd to Non-blocking mode
+	setNonBlocking(sockfd);
 	
 	// Socket Identification
 	if (bind(sockfd, (struct sockaddr *)&address, addrlen) < 0)
@@ -97,7 +111,7 @@ void	Server::run() {
 				connSock = accept(sockfd, (struct sockaddr *)&address, &addrlen);
 				if (connSock < 0)
 					throwError("accept()");
-				fcntl(connSock, F_SETFL, O_NONBLOCK);
+				setNonBlocking(connSock);
 				ev.events = EPOLLIN | EPOLLET;
 				ev.data.fd = connSock;
 				if (epoll_ctl(epollfd, EPOLL_CTL_ADD, connSock, &ev) < 0)

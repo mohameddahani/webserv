@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/28 10:07:08 by mait-all         ###   ########.fr       */
+/*   Updated: 2025/12/30 20:53:11 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,6 +99,7 @@ class Server : public Webserv {
 
 		int		getSockFd() const;
 		void	setSockFd(int fd);
+		void	setNonBlocking(int fd);
 		void	run();
 
 };

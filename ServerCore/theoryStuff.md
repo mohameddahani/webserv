@@ -377,4 +377,50 @@ Consider to calculate how many bytes (`Content-Length`) you're trying to send in
 
 
 
-## Blocking and Non Blocking Concepts
+## Blocking and Non Blocking socket Concepts
+
+### Blocking
+By default, all socket operations are blocking, `accept()`, `read() / recv()`, `write() / send()`, are all blocking functions, which means your program will stop or will wait untill that operation finish, for example `accept()` will sleep untill a new connection comes and `read()` or `recv()` also will wait untill some data found on the file descriptor.
+<br>
+This will cause a problem that is we'll not be able to handle multiple clients at the same time, because if your server get's stuck and waiting for a client to send him data, your body will not be able to handle new comming connections.
+<br>
+There some traditinal solutions to handle that problem like using `Multi-threading` or `Multi-processing( fork() )`, but these ways are complex, and cost intensive resources.
+
+### Non Blocking
+
+Non-blocking will never halt our program, if an operation cannot be completed immediately, It will return an error (`EAGAIN` or `EWOULDBLOCK`) instead of waiting.
+
+- **`accept()`**: If no clients are waiting, it returns immediately with an error.
+- **`read()`**: If there's no data to read, it returns immediately with an error.
+- **`write()`**: If the kernel's send buffer is full, it returns immediately with an error.
+
+##### How we can set a socket to Non-blocking?
+
+By using the `fcntl()` (file control) system call function to manipulate our file descriptor.
+```c
+#include <fcntl.h>
+#include <unistd.h>
+
+int set_nonblocking(int sockfd) {
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    if (flags == -1) {
+        perror("fcntl(F_GETFL)");
+        return -1;
+    }
+    if (fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) == -1) {
+        perror("fcntl(F_SETFL)");
+        return -1;
+    }
+    return 0;
+}
+```
+
+> **Note**: if we set a socket to non blocking and we try to read from it in a loop `while (true)`, we'll spin the CPU at 100% usage. and we will get `EAGAIN` imediately, this called a **busy-wait** problem.
+
+This where **I/O Multiplexing** comes in.
+
+## I/O Multiplexing
+**I/O Multiplexing** allows us to manipulate multiple file descriptors (sockets) at the same time and get notified when one of them is ready fo an I/O operation.
+<br>
+
+`epoll` is the modern and efficient I/O multiplexing API on linux.
