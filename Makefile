@@ -2,7 +2,9 @@ CXX = c++
 CXXFLAGS =  -Wall -Wextra -Werror -std=c++98 
 NAME = webserv
 
-SRCS = main.cpp ./server/server.cpp ./request/request.cpp ./response/response.cpp ./response/initMimeTypes.cpp
+SRCS = 	main.cpp \
+		./server/server.cpp \
+		./webserv.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
