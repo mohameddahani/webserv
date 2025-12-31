@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/27 20:44:41 by mait-all          #+#    #+#             */
-/*   Updated: 2025/12/30 21:33:22 by mait-all         ###   ########.fr       */
+/*   Updated: 2025/12/31 09:56:00 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,32 +121,43 @@ void	Server::run() {
 				ev.events = EPOLLIN | EPOLLET;
 				ev.data.fd = client_fd;
 				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) < 0)
-					throwError("epoll_ctl(client_fd)");
+					throwError("epoll_ctl(client_fd)"); // close fds if an error occurs
 			}
 			else
 			{
-				char	buffer[MAX_BUFFER_SIZE];
-				size_t	bytesReaded;
-				bytesReaded = recv(client_fd, buffer, MAX_BUFFER_SIZE - 1, 0);
-				if (bytesReaded < 0)
-					throwError("recv()");
-				buffer[bytesReaded] = '\0';
-				std::cout << "=== Request received ===\n";
-				std::cout << buffer << std::endl;
-				
-				////////////////////////////////////////////////////////////////////
-				// Pass received request to Request parser (Lahya is on line)
-				////////////////////////////////////////////////////////////////////
-				
-				////////////////////////////////////////////////////////////////////
-				// Then building the response (Al Dahmani is for it)
-				////////////////////////////////////////////////////////////////////
-
-				// just for testing a hello response send to each client
-				send(events[i].data.fd, hello, std::strlen(hello), 0);
-				
-				close(events[i].data.fd);
-				epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+				if (events[i].events & EPOLLIN)
+				{
+					client_fd = events[i].data.fd;
+					char	buffer[MAX_BUFFER_SIZE];
+					size_t	bytesReaded;
+					bytesReaded = recv(client_fd, buffer, MAX_BUFFER_SIZE - 1, 0);
+					if (bytesReaded < 0)
+						throwError("recv()");
+					buffer[bytesReaded] = '\0';
+					std::cout << "=== Request received ===\n";
+					std::cout << buffer << std::endl;
+					
+					////////////////////////////////////////////////////////////////////
+					// Pass received request to Request parser (Lahya is on line)
+					////////////////////////////////////////////////////////////////////
+				}
+				else if (events[i].events & EPOLLOUT)
+				{
+					////////////////////////////////////////////////////////////////////
+					// Then building the response (Al Dahmani is for it)
+					////////////////////////////////////////////////////////////////////
+	
+					// just for testing a hello response send to each client
+					send(client_fd, hello, std::strlen(hello), 0);
+					
+					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+					close(client_fd);
+				}
+				else // EPOLLERR is setted
+				{
+					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+					close (events[i].data.fd);
+				}
 			}
 		}
 		

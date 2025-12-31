@@ -424,3 +424,12 @@ This where **I/O Multiplexing** comes in.
 <br>
 
 `epoll` is the modern and efficient I/O multiplexing API on linux.
+
+#### Edge-Triggered vs Level-Triggered in epoll
+`epoll` has two modes for delivering events:
+
+- **Level-Triggered (The default):** `epoll_wait()` will continuously report an event as long as a file descriptor has changed (has some data to be read), `epoll_wait()` will ***always*** return that file descriptor as ready-to-read untill we have read all data from its buffer. `epoll()` with that mode is simply a faster `poll()`. This mode is simple to use, but can be less performant.
+
+- **Edge-Triggered (EPOLLET):** In that mode `epoll_wait()` will only notify you for an event once, when the state changes. For example, it will tell you a socket is ready-to-read only when new data first arrives. It will not notify you again untill more new data arrives. `epoll()` with that mode is more efficient and prevents `epoll_wait()` from constantly reminding you about an event you haven't full handled yet.
+
+>**note**: when `Edge-Triggered` mode is setted, we'll get one notification if a change state occurs, so we **must** process the file descriptor untill it would block (`read()` or `write()` returns `EAGAIN`). if only a part readed of the data, `epoll` will not notify us again, and the remaining data will sit in the buffer forever. This why the `while` loops arround `accept()` and `read()` is so important when using `EPOLLET`.
