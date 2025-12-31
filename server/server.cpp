@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/27 20:44:41 by mait-all          #+#    #+#             */
-/*   Updated: 2025/12/31 09:56:00 by mait-all         ###   ########.fr       */
+/*   Updated: 2025/12/31 11:44:34 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,6 +106,7 @@ void	Server::run() {
 		
 		for (int i = 0; i < n_fds ; i++)
 		{
+			// case 1: new connection comes, we should accept it
 			if (events[i].data.fd == server_fd)
 			{
 				while (true)
@@ -114,33 +115,45 @@ void	Server::run() {
 					socklen_t			client_len = sizeof(client_addr);
 					client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len);
 					if (client_fd < 0) // note: if accept sets errno to EAGAIN OR EWOULDBLOCK means it processed all incomming connections
-						break;		  //	   else it fails and we should throw, but checking errno is forbidden here.
-				}
+						break; //	   else it fails and we should throw, but checking errno is forbidden here.
 				
-				setNonBlocking(client_fd);
-				ev.events = EPOLLIN | EPOLLET;
-				ev.data.fd = client_fd;
-				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) < 0)
-					throwError("epoll_ctl(client_fd)"); // close fds if an error occurs
+					setNonBlocking(client_fd);
+					ev.events = EPOLLIN | EPOLLET;
+					ev.data.fd = client_fd;
+					if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) < 0)
+						throwError("epoll_ctl(client_fd)"); // close fds if an error occurs
+				}
 			}
+			// case 2: handle client events (read/write/error)
 			else
 			{
+				client_fd = events[i].data.fd;
+				
+				// Read event => Request received
 				if (events[i].events & EPOLLIN)
 				{
-					client_fd = events[i].data.fd;
 					char	buffer[MAX_BUFFER_SIZE];
-					size_t	bytesReaded;
-					bytesReaded = recv(client_fd, buffer, MAX_BUFFER_SIZE - 1, 0);
-					if (bytesReaded < 0)
+					size_t	bytesRead;
+					bytesRead = recv(client_fd, buffer, MAX_BUFFER_SIZE - 1, 0);
+					if (bytesRead < 0)
 						throwError("recv()");
-					buffer[bytesReaded] = '\0';
+					if (bytesRead == 0)
+						throwError("client disconnected!");
+					buffer[bytesRead] = '\0';
 					std::cout << "=== Request received ===\n";
 					std::cout << buffer << std::endl;
+
+					ev.events = EPOLLOUT | EPOLLET;
+					ev.data.fd = client_fd;
+					if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client_fd, &ev) < 0)
+						throwError("epoll_ctl(client_fd)");
 					
 					////////////////////////////////////////////////////////////////////
 					// Pass received request to Request parser (Lahya is on line)
 					////////////////////////////////////////////////////////////////////
+					
 				}
+				// Write event => Send response
 				else if (events[i].events & EPOLLOUT)
 				{
 					////////////////////////////////////////////////////////////////////
@@ -148,15 +161,19 @@ void	Server::run() {
 					////////////////////////////////////////////////////////////////////
 	
 					// just for testing a hello response send to each client
-					send(client_fd, hello, std::strlen(hello), 0);
+					size_t bytesSent = send(client_fd, hello, std::strlen(hello), 0);
+					if (bytesSent < 0)
+						throwError("send()");
 					
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
 					close(client_fd);
 				}
-				else // EPOLLERR is setted
+				// Error event => EPOLLERR is setted
+				else
 				{
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
 					close (events[i].data.fd);
+					continue;
 				}
 			}
 		}
