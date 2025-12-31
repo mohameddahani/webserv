@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/31 12:16:49 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/31 15:53:00 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,18 +58,6 @@ class Webserv {
       MOVED_PERMANENTLY = 301,
       FOUND = 302,
 
-    };
-
-    enum STATUS_CODE {
-      // * 2xx Success
-      OK = 200,
-      CREATED = 201,
-      NO_CONTENT = 204,
-
-      // * 3xx Redirection
-      MOVED_PERMANENTLY = 301,
-      FOUND = 302,
-
       // * 4xx Client Error
       BAD_REQUEST = 400,
       FORBIDDEN = 403,
@@ -83,7 +71,6 @@ class Webserv {
       GATEWAY_TIMEOUT = 504
     };
     // member functions
-    void initMimeTypes();
     void throwError(std::string func);
 };
 
@@ -104,10 +91,6 @@ class Server : public Webserv {
     int getSockFd() const;
     void setSockFd(int fd);
     void setNonBlocking(int fd);
-    void run();
-
-    int getSockFd() const;
-    void setSockFd(int fd);
     void run();
 };
 

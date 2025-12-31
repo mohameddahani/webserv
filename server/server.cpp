@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 13:05:03 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/31 12:06:53 by mdahani          ###   ########.fr       */
+/*   Updated: 2025/12/31 15:57:09 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,11 +51,11 @@ void	Server::run() {
 	struct sockaddr_in	server_addr;
 	socklen_t			server_len;
 	struct epoll_event	ev, events[MAX_EVENTS];
-	const char 				*hello="HTTP/1.1 200 OK\r\n"
-	                    			"Content-Type: text/plain\r\n"
-	                   			 	"Content-Length: 11\r\n"
-	                   				 "\r\n"
-	                   				 "Sir, Tal3b!";
+	// const char 				*hello="HTTP/1.1 200 OK\r\n"
+	//                     			"Content-Type: text/plain\r\n"
+	//                    			 	"Content-Length: 11\r\n"
+	//                    				 "\r\n"
+	//                    				 "Sir, Tal3b!";
 
 	// Initialization 
 	server_addr.sin_family = IPv4;
@@ -131,7 +131,7 @@ void	Server::run() {
 					char	buffer[MAX_BUFFER_SIZE];
 					size_t	bytesRead;
 					bytesRead = recv(client_fd, buffer, MAX_BUFFER_SIZE - 1, 0);
-					if (bytesRead < 0)
+					if ((int)bytesRead < 0)
 						throwError("recv()");
 					if (bytesRead == 0)
 						throwError("client disconnected!");
@@ -147,6 +147,8 @@ void	Server::run() {
 					////////////////////////////////////////////////////////////////////
 					// Pass received request to Request parser (Lahya is on line)
 					////////////////////////////////////////////////////////////////////
+
+					req.setRequest(buffer);
 					
 				}
 				// Write event => Send response
@@ -155,10 +157,10 @@ void	Server::run() {
 					////////////////////////////////////////////////////////////////////
 					// Then building the response (Al Dahmani is for it)
 					////////////////////////////////////////////////////////////////////
-	
+					res.response(req);
 					// just for testing a hello response send to each client
-					size_t bytesSent = send(client_fd, hello, std::strlen(hello), 0);
-					if (bytesSent < 0)
+					size_t bytesSent = send(client_fd, res.getResponse().c_str(), res.getResponse().length(), 0);
+					if ((int)bytesSent < 0)
 						throwError("send()");
 					
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);

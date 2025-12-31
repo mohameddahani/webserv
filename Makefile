@@ -4,6 +4,9 @@ NAME = webserv
 
 SRCS = 	main.cpp \
 		./server/server.cpp \
+		./request/request.cpp \
+		./response/response.cpp \
+		./response/initMimeTypes.cpp \
 		./webserv.cpp
 
 OBJS = $(SRCS:.cpp=.o)
