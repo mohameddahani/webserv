@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 13:05:03 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/31 17:13:21 by mait-all         ###   ########.fr       */
+/*   Updated: 2026/01/01 13:16:26 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,7 @@ void	Server::setNonBlocking(int fd)
 }
 
 void	Server::run() {
+	static int count = 0;
 	Request				req;
 	Response			res;
 	int					server_fd;
@@ -105,20 +106,21 @@ void	Server::run() {
 			// case 1: new connection comes, we should accept it
 			if (events[i].data.fd == server_fd)
 			{
-				while (true)
-				{
 					struct sockaddr_in	client_addr;
 					socklen_t			client_len = sizeof(client_addr);
 					client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len);
-					if (client_fd < 0) // note: if accept sets errno to EAGAIN OR EWOULDBLOCK means it processed all incomming connections
-						break; //	   else it fails and we should throw, but checking errno is forbidden here.
-				
+					if (client_fd < 0)
+						throwError("accept()");
 					setNonBlocking(client_fd);
-					ev.events = EPOLLIN | EPOLLET;
+					ev.events = EPOLLIN;
 					ev.data.fd = client_fd;
 					if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) < 0)
 						throwError("epoll_ctl(client_fd)"); // close fds if an error occurs
-				}
+					std::cout << "\n\nconnection accepted from file:" << client_fd << std::endl;
+					clients[client_fd].bytes_received = 0;
+					clients[client_fd].content_length = 0;
+					clients[client_fd].headers_complete = false;
+					clients[client_fd].request_complete = false;
 			}
 			// case 2: handle client events (read/write/error)
 			else
@@ -132,33 +134,37 @@ void	Server::run() {
 					size_t	bytesRead;
 					bytesRead = recv(client_fd, buffer, MAX_BUFFER_SIZE - 1, 0);
 					if ((int)bytesRead < 0)
-						throwError("recv()");
+						continue ;
 					if (bytesRead == 0)
-						throwError("client disconnected!");
-					buffer[bytesRead] = '\0';
+						continue;
+					clients[client_fd].request.append(buffer, bytesRead);
+					clients[client_fd].bytes_received += bytesRead;
+					std::cout << "bytes readed: " << bytesRead << "count: " << count << std::endl;
+					count++;
+					if (clients[client_fd].request.find("\r\n\r\n") == std::string::npos)
+						continue;
+					
+					// if (clients[client_fd].request.find("Content-Length:"))
+					// {
+					// 	std::string	contentLengthValue = clients[client_fd].request.substr(start, )
+					// }
 					std::cout << "=== Request received ===\n";
-					std::cout << buffer << std::endl;
+					std::cout << clients[client_fd].request << std::endl;
 
-					ev.events = EPOLLOUT | EPOLLET;
+					ev.events = EPOLLIN | EPOLLOUT;
 					ev.data.fd = client_fd;
 					if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client_fd, &ev) < 0)
 						throwError("epoll_ctl(client_fd)");
-					
-					////////////////////////////////////////////////////////////////////
-					// Pass received request to Request parser (Lahya is on line)
-					////////////////////////////////////////////////////////////////////
 
 					req.setRequest(buffer);
-					
 				}
 				// Write event => Send response
 				else if (events[i].events & EPOLLOUT)
 				{
-					////////////////////////////////////////////////////////////////////
-					// Then building the response (Al Dahmani is for it)
-					////////////////////////////////////////////////////////////////////
 					res.response(req);
 					// just for testing a hello response send to each client
+					// std::cout << res.getResponse() << std::endl;
+					// std::cout << "\nresponse sent\n";
 					size_t bytesSent = send(client_fd, res.getResponse().c_str(), res.getResponse().length(), 0);
 					if ((int)bytesSent < 0)
 						throwError("send()");

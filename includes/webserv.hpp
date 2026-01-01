@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/31 17:12:51 by mait-all         ###   ########.fr       */
+/*   Updated: 2026/01/01 11:03:49 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,30 +75,40 @@ class Webserv {
 };
 
 // ******************************************************************************
-// //
+//
 //                                  Server Class //
 // ******************************************************************************
 // //
 
+typedef struct t_clientState {
+	std::string	request;
+	size_t		bytes_received;
+	size_t		content_length;
+	bool		headers_complete;
+	bool		request_complete;
+
+
+} t_clientState;
+
 class Server : public Webserv {
 
-  private:
-    int _sockfd;
+	private:
+		int _sockfd;
 
-  public:
-    Server();
+	public:
+		std::map<int, t_clientState> clients;
+		Server();
 
-    int getSockFd() const;
-    void setSockFd(int fd);
-    void setNonBlocking(int fd);
-    void run();
+		int getSockFd() const;
+		void setSockFd(int fd);
+		void setNonBlocking(int fd);
+		void run();
 };
 
-// ******************************************************************************
-// //
+// ****************************************************************************** //
+//
 //                                 Request Class //
-// ******************************************************************************
-// //
+// ****************************************************************************** //
 
 class Request : public Webserv {
 
