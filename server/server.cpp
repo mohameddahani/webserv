@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 13:05:03 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/01 13:16:26 by mait-all         ###   ########.fr       */
+/*   Updated: 2026/01/01 16:14:51 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,8 +40,29 @@ void	Server::setNonBlocking(int fd)
 		throwError("fcntl(F_SETFL)");
 }
 
+bool	Server::isCompleteRequest(std::string& request)
+{
+	if (request.find("Content-Length:") != std::string::npos)
+		return (true);
+	return (false);
+}
+
+size_t	Server::getContentLength(std::string& request)
+{
+	size_t	pos = request.find("Content-Length:");
+	if (pos == std::string::npos)
+		return (0);
+	size_t	start = pos + 15;
+	size_t	end = request.find("\r\n", start);
+	if (end == std::string::npos)
+		return (0);
+
+	std::string	lengthStr = request.substr(start, end - start);
+	return (std::atoll(lengthStr.c_str()));
+}
+
 void	Server::run() {
-	static int count = 0;
+	// static int count = 0;
 	Request				req;
 	Response			res;
 	int					server_fd;
@@ -121,6 +142,7 @@ void	Server::run() {
 					clients[client_fd].content_length = 0;
 					clients[client_fd].headers_complete = false;
 					clients[client_fd].request_complete = false;
+					clients[client_fd].doesGetContentLength = false;
 			}
 			// case 2: handle client events (read/write/error)
 			else
@@ -130,24 +152,28 @@ void	Server::run() {
 				// Read event => Request received
 				if (events[i].events & EPOLLIN)
 				{
-					char	buffer[MAX_BUFFER_SIZE];
+					char	buffer[10];
 					size_t	bytesRead;
-					bytesRead = recv(client_fd, buffer, MAX_BUFFER_SIZE - 1, 0);
+					bytesRead = recv(client_fd, buffer, 10 - 1, 0);
 					if ((int)bytesRead < 0)
-						continue ;
+						throwError("recv()");
 					if (bytesRead == 0)
 						continue;
 					clients[client_fd].request.append(buffer, bytesRead);
 					clients[client_fd].bytes_received += bytesRead;
-					std::cout << "bytes readed: " << bytesRead << "count: " << count << std::endl;
-					count++;
-					if (clients[client_fd].request.find("\r\n\r\n") == std::string::npos)
+					// std::cout << "bytes readed: " << bytesRead << "count: " << count << std::endl;
+					// count++;
+					size_t headerEnd = clients[client_fd].request.find("\r\n\r\n");
+					if (headerEnd == std::string::npos)
 						continue;
 					
-					// if (clients[client_fd].request.find("Content-Length:"))
-					// {
-					// 	std::string	contentLengthValue = clients[client_fd].request.substr(start, )
-					// }
+					if (isCompleteRequest(clients[client_fd].request) && !clients[client_fd].doesGetContentLength)
+					{
+						clients[client_fd].content_length = getContentLength(clients[client_fd].request);
+						clients[client_fd].doesGetContentLength = true;
+					}
+					if (clients[client_fd].doesGetContentLength && (clients[client_fd].content_length > clients[client_fd].request.length() - headerEnd - 4))
+						continue;
 					std::cout << "=== Request received ===\n";
 					std::cout << clients[client_fd].request << std::endl;
 
@@ -156,7 +182,7 @@ void	Server::run() {
 					if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client_fd, &ev) < 0)
 						throwError("epoll_ctl(client_fd)");
 
-					req.setRequest(buffer);
+					req.setRequest(clients[client_fd].request);
 				}
 				// Write event => Send response
 				else if (events[i].events & EPOLLOUT)
@@ -170,6 +196,7 @@ void	Server::run() {
 						throwError("send()");
 					
 					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+					clients[client_fd].request = "";
 					close(client_fd);
 				}
 				// Error event => EPOLLERR is setted

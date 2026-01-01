@@ -6,12 +6,13 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/01 11:03:49 by mait-all         ###   ########.fr       */
+/*   Updated: 2026/01/01 13:54:08 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef WEBSERV_HPP
 #define WEBSERV_HPP
+#include <cstdlib>
 #include <climits>
 #include <cstring>
 #include <ctime>
@@ -84,6 +85,7 @@ typedef struct t_clientState {
 	std::string	request;
 	size_t		bytes_received;
 	size_t		content_length;
+	bool		doesGetContentLength;
 	bool		headers_complete;
 	bool		request_complete;
 
@@ -99,10 +101,12 @@ class Server : public Webserv {
 		std::map<int, t_clientState> clients;
 		Server();
 
-		int getSockFd() const;
-		void setSockFd(int fd);
-		void setNonBlocking(int fd);
-		void run();
+		int		getSockFd() const;
+		void	setSockFd(int fd);
+		void	setNonBlocking(int fd);
+		bool	isCompleteRequest(std::string& request);
+		size_t	getContentLength(std::string& request);
+		void	run();
 };
 
 // ****************************************************************************** //
