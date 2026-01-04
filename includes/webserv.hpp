@@ -20,6 +20,9 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <vector>
+#include <algorithm>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sstream>
 #include <sys/epoll.h>
@@ -78,6 +81,8 @@ class Webserv {
 //                                  Server Class                                  //
 // ****************************************************************************** //
 
+class Request;
+
 typedef struct s_clientState {
 	int			fd;
     std::string	request;
@@ -108,12 +113,22 @@ class Server : public Webserv {
     bool	isCompleteRequest(std::string &request);
     size_t	getContentLength(std::string &request);
 	void	sendResponse();
-    void	run();
+    void	run(Request &req);
 };
 
 // ****************************************************************************** //
 //                                 Request Class                                  //
 // ****************************************************************************** //
+
+typedef struct location
+{
+    std::string path;
+    std::vector<std::string> allow_methods;
+    bool autoindex;
+    std::string root;
+    std::string return_to;
+    std::string index;
+} location;
 
 class Request : public Webserv {
 
@@ -125,8 +140,22 @@ class Request : public Webserv {
     std::string path;
     std::string httpV;
 
+    // this is for config file
+    std::vector<int> listen;
+    std::string server_name;
+    std::string host;
+    std::string root;
+    int client_max_body_size;
+    std::string index;
+    std::map<int, std::string> error_page;
+    std::vector<location> locations;
+    std::vector<std::string> cgi_path;
+    std::vector<std::string> cgi_ext;
+
     void setRequest(const std::string &req);
     const std::map<std::string, std::string> &getRequest() const;
+    void  init_the_header_conf_default(Request &request);
+    void  parse_config_file(Request &request, char *av);
 };
 
 // ****************************************************************************** //

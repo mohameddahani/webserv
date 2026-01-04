@@ -61,9 +61,8 @@ size_t	Server::getContentLength(std::string& request)
 	return (std::atoll(lengthStr.c_str()));
 }
 
-void	Server::run() {
+void	Server::run(Request &req) {
 	// static int count = 0;
-	Request				req;
 	Response			res;
 	int					server_fd;
 	int					client_fd;
@@ -81,8 +80,8 @@ void	Server::run() {
 
 	// Initialization 
 	server_addr.sin_family = IPv4;
-	server_addr.sin_addr.s_addr = htonl(IP);
-	server_addr.sin_port = htons(PORT);
+	server_addr.sin_addr.s_addr = inet_addr(req.host.c_str());
+	server_addr.sin_port = htons(req.listen[0]);
 	std::memset(server_addr.sin_zero, 0, sizeof(server_addr.sin_zero));
 	opt = 1;
 	server_len = sizeof(server_addr);
@@ -225,7 +224,7 @@ void	Server::run() {
 						// std::cout << bytesRead;
 						// std::cout << "--------------------------------------\n";
 						// * i change strlen by bytesRead
-						ssize_t bytesSent = send(client_fd, buffer, bytesRead, 0);
+						bytesSent = send(client_fd, buffer, bytesRead, 0);
 						if (bytesSent < 0)
 						{
 								close(client_fd);
