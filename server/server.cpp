@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 13:05:03 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/02 15:42:33 by mait-all         ###   ########.fr       */
+/*   Updated: 2026/01/04 10:30:52 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,18 +131,21 @@ void	Server::run() {
 					socklen_t			client_len = sizeof(client_addr);
 					client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len);
 					if (client_fd < 0)
-						throwError("accept()");
+						continue;
 					setNonBlocking(client_fd);
 					ev.events = EPOLLIN;
 					ev.data.fd = client_fd;
 					if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) < 0)
 						throwError("epoll_ctl(client_fd)"); // close fds if an error occurs
 					std::cout << "\n\nconnection accepted from file:" << client_fd << std::endl;
-					clients[client_fd].bytes_received = 0;
-					clients[client_fd].content_length = 0;
-					clients[client_fd].headers_complete = false;
-					clients[client_fd].request_complete = false;
-					clients[client_fd].isHeaderSent = false;
+					t_clientState	clientState;
+					clientState.fd = client_fd;
+					clients[client_fd] = clientState;
+					// clients[client_fd].bytes_received = 0;
+					// clients[client_fd].content_length = 0;
+					// clients[client_fd].headers_complete = false;
+					// clients[client_fd].request_complete = false;
+					// clients[client_fd].isHeaderSent = false;
 			}
 			// case 2: handle client events (read/write/error)
 			else
@@ -155,10 +158,14 @@ void	Server::run() {
 					char	buffer[10];
 					size_t	bytesRead;
 					bytesRead = recv(client_fd, buffer, 10 - 1, 0);
-					if ((int)bytesRead < 0)
-						throwError("recv()");
-					if (bytesRead == 0)
-						continue;
+					if ((int)bytesRead <= 0)
+						{
+							close(events[i].data.fd);
+							clients.erase(events[i].data.fd);
+							continue;
+						}
+					// if (bytesRead == 0)
+					// 	continue;
 					clients[client_fd].request.append(buffer, bytesRead);
 					clients[client_fd].bytes_received += bytesRead;
 					// std::cout << "bytes readed: " << bytesRead << "count: " << count << std::endl;
@@ -186,38 +193,49 @@ void	Server::run() {
 				}
 				// Write event => Send response
 				else if (events[i].events & EPOLLOUT)
-				{ 
-					// file descriptor each time is opened
+				{
 					if (!clients[client_fd].isHeaderSent)
 					{
 						res.response(req);
-						send(client_fd, res.getHeaders().c_str(), res.getHeaders().length(), 0);
+						std::string	responseHeaders = res.getHeaders();
+						size_t		headersLength = responseHeaders.length();
+						ssize_t		bytesSent;
+				
+						bytesSent = send(client_fd, responseHeaders.c_str(), headersLength, 0);
+						if (bytesSent < 0)
+							throwError("send() when sending header part");
 						clients[client_fd].isHeaderSent = true;
 					}
 					if (clients[client_fd].isHeaderSent)
 					{
 						char	buffer[100];
 						ssize_t	bytesRead;
+						ssize_t	bytesSent;
+
 						bytesRead = read(res.getBodyFd(), buffer, sizeof(buffer));
 						if (bytesRead <= 0)
 						{
-							epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-							clients[client_fd].request = "";
-							close(client_fd);
 							clients.erase(client_fd);
+							epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+							close(client_fd);
+							close(res.getBodyFd());
 							continue;
 						}
-						ssize_t bytesSent = send(client_fd, buffer, strlen(buffer), 0);
+						bytesSent = send(client_fd, buffer, bytesRead, 0);
 						if (bytesSent < 0)
-							throwError("send()");
+						{
+								close(client_fd);
+								clients.erase(client_fd);
+								continue;
+						}
 						std::memset(buffer, '\0', sizeof(buffer));
 					}
 				}
 				// Error event => EPOLLERR is setted
 				else
 				{
-					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-					close (events[i].data.fd);
+					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+					close (client_fd);
 					continue;
 				}
 			}
@@ -227,7 +245,7 @@ void	Server::run() {
 	
 	close(server_fd);
 	close(epoll_fd);
-		
+
 // 	bool	running = true;
 // 	while (running)
 // 	{

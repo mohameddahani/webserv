@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
+/*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/02 11:30:15 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/04 09:03:24 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,11 +32,9 @@
 #define MAX_BUFFER_SIZE 4096
 #define MAX_EVENTS 1024
 
-// ******************************************************************************
-// //
-//                                  Webserv Class //
-// ******************************************************************************
-// //
+// ****************************************************************************** //
+//                                  Webserv Class                                 //
+// ****************************************************************************** //
 
 class Webserv {
 
@@ -75,23 +73,21 @@ class Webserv {
     void throwError(std::string func);
 };
 
-// ******************************************************************************
-//
-//                                  Server Class //
-// ******************************************************************************
-// //
+// ****************************************************************************** //
+//                                  Server Class                                  //
+// ****************************************************************************** //
 
-typedef struct t_clientState {
-    std::string request;
-    std::string response;
-    std::string responseHeader;
-    size_t bytes_received;
-    size_t content_length;
-    size_t response_len;
-    bool doesGetContentLength;
-    bool headers_complete;
-    bool request_complete;
-    bool isHeaderSent;
+typedef struct s_clientState {
+	int			fd;
+    std::string	request;
+    size_t		bytes_received;
+    size_t		content_length;
+    bool		doesGetContentLength;
+    bool		headers_complete;
+    bool		request_complete;
+    bool		isHeaderSent;
+
+	s_clientState(): fd(-1), bytes_received(0), content_length(0), doesGetContentLength(false), headers_complete(false), request_complete(false), isHeaderSent(false) {};
 
 } t_clientState;
 
@@ -101,23 +97,22 @@ class Server : public Webserv {
     int _sockfd;
 
   public:
-    std::map<int, t_clientState> clients;
+    std::map<int, t_clientState>	clients;
+
     Server();
 
-    int getSockFd() const;
-    void setSockFd(int fd);
-    void setNonBlocking(int fd);
-    bool isCompleteRequest(std::string &request);
-    size_t getContentLength(std::string &request);
-    void run();
+    int		getSockFd() const;
+    void	setSockFd(int fd);
+    void	setNonBlocking(int fd);
+    bool	isCompleteRequest(std::string &request);
+    size_t	getContentLength(std::string &request);
+	void	sendResponse();
+    void	run();
 };
 
-// ******************************************************************************
-// //
-//
-//                                 Request Class //
-// ******************************************************************************
-// //
+// ****************************************************************************** //
+//                                 Request Class                                  //
+// ****************************************************************************** //
 
 class Request : public Webserv {
 
@@ -133,11 +128,9 @@ class Request : public Webserv {
     const std::map<std::string, std::string> &getRequest() const;
 };
 
-// ******************************************************************************
-// //
-//                                 Response Class //
-// ******************************************************************************
-// //
+// ****************************************************************************** //
+//                                 Response Class                                 //
+// ****************************************************************************** //
 
 class Response : public Webserv {
   private:
