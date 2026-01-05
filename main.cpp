@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
+/*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 16:52:42 by mdahani           #+#    #+#             */
-/*   Updated: 2025/12/25 09:26:44 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/05 17:58:29 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,11 @@ int main(int ac, char **av) {
 
   try {
     Server server;
-    request.init_the_header_conf_default(request);
+    request.config.init_the_header_conf_default();
     if (ac > 2)
       throw std::runtime_error("./program [config file]");
     else if (ac == 2)
-      request.parse_config_file(request, av[1]);
+      request.config.parse_config_file(av[1]);
     server.run(request);
   } catch (const std::exception &e) {
     std::cerr << e.what() << '\n';

@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 13:05:03 by mait-all          #+#    #+#             */
-/*   Updated: 2026/01/05 17:23:38 by mait-all         ###   ########.fr       */
+/*   Updated: 2026/01/05 17:58:38 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -167,8 +167,8 @@ void	Server::run(Request &req) {
 
 	// Initialization 
 	server_addr.sin_family = IPv4;
-	server_addr.sin_addr.s_addr = inet_addr(req.host.c_str());
-	server_addr.sin_port = htons(req.listen[0]);
+	server_addr.sin_addr.s_addr = inet_addr(req.config.host.c_str());
+	server_addr.sin_port = htons(req.config.listen[0]);
 	std::memset(server_addr.sin_zero, 0, sizeof(server_addr.sin_zero));
 	opt = 1;
 	server_len = sizeof(server_addr);
@@ -201,7 +201,7 @@ void	Server::run(Request &req) {
 	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &ev) < 0)
 		throwError("epoll_ctl(server_fd)");
 	
-	 std::cout << "🚀 Server running on port " << req.listen[0] << std::endl;
+	 std::cout << "🚀 Server running on port " << req.config.listen[0] << std::endl;
 		
 	bool	running = true;
 	while (running)
