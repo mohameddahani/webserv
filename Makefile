@@ -5,9 +5,11 @@ NAME = webserv
 SRCS = 	main.cpp \
 		./server/server.cpp \
 		./request/request.cpp \
+		./parse_config_file/parse_config_file.cpp \
 		./response/response.cpp \
 		./response/initMimeTypes.cpp \
 		./webserv.cpp
+
 
 OBJS = $(SRCS:.cpp=.o)
 
