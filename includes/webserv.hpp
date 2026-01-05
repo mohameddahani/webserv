@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/04 10:40:41 by mait-all         ###   ########.fr       */
+/*   Updated: 2026/01/05 15:51:00 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,7 +170,6 @@ class Response : public Webserv {
     std::string contentType;
     std::string contentLength;
     std::string headers;
-    static const std::string serverName;
     int bodyFd;
 
   public:
@@ -188,6 +187,8 @@ class Response : public Webserv {
                        const std::string &statusCodeDescription);
     std::string getStatusLine() const;
 
+    std::string getServerName(const Request &req) const;
+
     void setContentType(const std::string &path);
     std::string getContentType() const;
 
@@ -195,7 +196,7 @@ class Response : public Webserv {
     std::string getContentLength() const;
 
     std::string getHeaders() const;
-    void setHeaders();
+    void setHeaders(const Request &req);
 
     void setBodyFd(int &fd);
     int getBodyFd() const;

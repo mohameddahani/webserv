@@ -6,14 +6,11 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/05 10:26:08 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/05 15:49:19 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/webserv.hpp"
-
-// * initialize server name
-const std::string Response::serverName = "Server: webserv/1.0\r\n";
 
 // * Default Constructor
 Response::Response() { this->setMimeTypes(); }
@@ -31,6 +28,11 @@ void Response::setStatusLine(const std::string httpV,
   this->statusLine = httpV + " " + statusCodeDescription + "\r\n";
 }
 std::string Response::getStatusLine() const { return this->statusLine; }
+
+// * server name
+std::string Response::getServerName(const Request &req) const {
+  return "Server: " + req.server_name + "\r\n";
+}
 
 // * content type
 void Response::setContentType(const std::string &path) {
@@ -74,8 +76,8 @@ std::string Response::getContentLength() const { return this->contentLength; }
 // * headers
 std::string Response::getHeaders() const { return this->headers; }
 
-void Response::setHeaders() {
-  this->headers = this->getStatusLine() + this->serverName +
+void Response::setHeaders(const Request &req) {
+  this->headers = this->getStatusLine() + getServerName(req) +
                   this->getContentType() + getContentLength() + "\r\n";
 }
 
@@ -94,8 +96,11 @@ int Response::getBodyFd() const { return this->bodyFd; }
 // * GET METHOD
 void Response::GET_METHOD(Request &req) {
   if (req.path == "/") {
-    req.path.append("index.html");
+    req.path.append(req.index);
   }
+
+  // * set status code as default
+  this->setStatusCode(OK);
 
   // * Generate response
   this->generateResponse(req);
@@ -103,6 +108,9 @@ void Response::GET_METHOD(Request &req) {
 
 // * POST METHOD
 void Response::POST_METHOD(Request &req) {
+  // * set status code as default
+  this->setStatusCode(CREATED);
+
   // * get content type to decide which response will send in post method
   std::string contentType = req.getRequest().count("Content-Type")
                                 ? req.getRequest().find("Content-Type")->second
@@ -111,8 +119,8 @@ void Response::POST_METHOD(Request &req) {
   // ? application/x-www-form-urlencoded
   if (contentType == "application/x-www-form-urlencoded\r") {
     // * set all data in html page
-    req.path = "/post-request-data.html";
     this->addDataToBody(req);
+    req.path = "/post-request-data.html";
   } else if (contentType.substr(0, 52) == // ? multipart/form-data;
                                           // ? boundary=----WebKitFormBoundary
              "multipart/form-data; boundary=----WebKitFormBoundary") {
@@ -121,9 +129,16 @@ void Response::POST_METHOD(Request &req) {
                                  : "";
     // * check if the file is empty
     if (uploadBody.empty()) {
+      // todo: i think i should make this path flexible (get from config file)
       req.path = "/post-request-error-upload.html";
+      this->setStatusCode(NO_CONTENT);
+    } else if (uploadBody.length() / 1e6 >
+               req.client_max_body_size) { // * check file size by config file
+                                           // * convert from bytes to MB
+      this->setStatusCode(FORBIDDEN);
+      // todo: i think i should make this path flexible (get from config file)
+      req.path = "/errors/403.html";
     } else {
-      // todo: upload file
       std::string filename = req.getRequest().count("filename")
                                  ? req.getRequest().find("filename")->second
                                  : "";
@@ -137,9 +152,8 @@ void Response::POST_METHOD(Request &req) {
       // * check the directory of upload
       std::ifstream uploadDir(fullPath.c_str());
       if (!uploadDir.is_open()) {
-        uploadDir.close();
-
-        // todo: status code in not correct
+        this->setStatusCode(FORBIDDEN);
+        // todo: i think i should make this path flexible (get from config file)
         req.path = "/errors/403.html";
       } else {
         fullPath.append(filename);
@@ -149,15 +163,17 @@ void Response::POST_METHOD(Request &req) {
 
         if (!outputFile.is_open()) {
           std::cerr << "Error: Failed to create file!" << std::endl;
+          uploadDir.close();
           return;
         }
 
         outputFile << uploadBody;
 
-        // ! close output file 
+        // ! close output file
         uploadDir.close();
         outputFile.close();
 
+        // todo: i think i should make this path flexible (get from config file)
         req.path = "/post-request-upload.html";
       }
     }
@@ -172,31 +188,31 @@ void Response::DELETE_METHOD(const Request &req) { (void)req; }
 
 // * Status code description
 std::string Response::statusCodeDescription(STATUS_CODE statusCode) {
-  if (statusCode == this->OK) {
+  if (statusCode == OK) {
     return "200 OK";
-  } else if (statusCode == this->CREATED) {
+  } else if (statusCode == CREATED) {
     return "201 Created";
-  } else if (statusCode == this->NO_CONTENT) {
+  } else if (statusCode == NO_CONTENT) {
     return "204 No Content";
-  } else if (statusCode == this->MOVED_PERMANENTLY) {
+  } else if (statusCode == MOVED_PERMANENTLY) {
     return "301 Moved Permanently";
-  } else if (statusCode == this->FOUND) {
+  } else if (statusCode == FOUND) {
     return "302 Found";
-  } else if (statusCode == this->BAD_REQUEST) {
+  } else if (statusCode == BAD_REQUEST) {
     return "400 Bad Request";
-  } else if (statusCode == this->FORBIDDEN) {
+  } else if (statusCode == FORBIDDEN) {
     return "403 Forbidden";
-  } else if (statusCode == this->NOT_FOUND) {
+  } else if (statusCode == NOT_FOUND) {
     return "404 Not Found";
-  } else if (statusCode == this->METHOD_NOT_ALLOWED) {
+  } else if (statusCode == METHOD_NOT_ALLOWED) {
     return "405 Method Not Allowed";
-  } else if (statusCode == this->PAYLOAD_TOO_LARGE) {
+  } else if (statusCode == PAYLOAD_TOO_LARGE) {
     return "413 Payload Too Large";
-  } else if (statusCode == this->INTERNAL_SERVER_ERROR) {
+  } else if (statusCode == INTERNAL_SERVER_ERROR) {
     return "500 Internal Server Error";
-  } else if (statusCode == this->BAD_GATEWAY) {
+  } else if (statusCode == BAD_GATEWAY) {
     return "502 Bad Gateway";
-  } else if (statusCode == this->GATEWAY_TIMEOUT) {
+  } else if (statusCode == GATEWAY_TIMEOUT) {
     return "504 Gateway Timeout";
   }
   return "Unknown Status";
@@ -354,9 +370,7 @@ void Response::methodNotAllowed(Request &req) {
 void Response::generateResponse(Request &req) {
   // * root directory
   // todo: check if we have the folder
-  // ? think about if we can use inset to req.path and remove this fullPath
-  // ? variable
-  std::string fullPath("pages");
+  std::string fullPath(req.root);
 
   // * add path to root directory
   fullPath.append(req.path);
@@ -365,14 +379,14 @@ void Response::generateResponse(Request &req) {
   // todo: change the path of error pages by config file and check if we have
   // todo: the folder
   if (access(fullPath.c_str(), F_OK) == -1) {
-    this->setStatusCode(this->NOT_FOUND);
-    fullPath = "pages/errors/404.html";
+    this->setStatusCode(NOT_FOUND);
+    fullPath = (req.error_page[NOT_FOUND]);
+    // fullPath = "pages/errors/404.html";
   } else if (access(fullPath.c_str(), R_OK) == -1 ||
              access(fullPath.c_str(), W_OK) == -1) {
-    this->setStatusCode(this->FORBIDDEN);
-    fullPath = "pages/errors/403.html";
-  } else {
-    this->setStatusCode(this->OK);
+    this->setStatusCode(FORBIDDEN);
+    fullPath = (req.error_page[FORBIDDEN]);
+    // fullPath = "pages/errors/403.html";
   }
 
   // * status line
@@ -385,7 +399,7 @@ void Response::generateResponse(Request &req) {
   this->setContentLength(this->countBodyLength(fullPath));
 
   // * merge all headers
-  this->setHeaders();
+  this->setHeaders(req);
 
   // * get fd of body
   int fd = open(fullPath.c_str(), O_RDONLY);
@@ -410,11 +424,11 @@ void Response::response(Request &req) {
     std::cout << "=======GET=======" << std::endl;
     this->GET_METHOD(req);
   } else if (req.method == POST) {
-    this->POST_METHOD(req);
     std::cout << "=======POST=======" << std::endl;
+    this->POST_METHOD(req);
   } else if (req.method == DELETE) {
-    this->DELETE_METHOD(req);
     std::cout << "=======DELETE=======" << std::endl;
+    this->DELETE_METHOD(req);
   } else {
     this->methodNotAllowed(req);
     std::cout << "=======ELSE=======" << std::endl;

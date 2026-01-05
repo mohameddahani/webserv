@@ -2,9 +2,9 @@
 
 void Request::init_the_header_conf_default(Request &request){
     request.listen.push_back(8080);
-    request.server_name = "wedserv/1.0";
+    request.server_name = "webserv/1.0";
     request.host = "127.0.0.1";
-    request.root = "/pages";
+    request.root = "pages";
     request.client_max_body_size = 1024;
     request.index = "index.html";
     std::stringstream page;
