@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/05 10:13:15 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/05 10:26:08 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -138,26 +138,28 @@ void Response::POST_METHOD(Request &req) {
       std::ifstream uploadDir(fullPath.c_str());
       if (!uploadDir.is_open()) {
         uploadDir.close();
+
+        // todo: status code in not correct
         req.path = "/errors/403.html";
-        return;
+      } else {
+        fullPath.append(filename);
+
+        std::ofstream outputFile(fullPath.c_str(),
+                                 std::ios::binary | std::ios::out);
+
+        if (!outputFile.is_open()) {
+          std::cerr << "Error: Failed to create file!" << std::endl;
+          return;
+        }
+
+        outputFile << uploadBody;
+
+        // ! close output file 
+        uploadDir.close();
+        outputFile.close();
+
+        req.path = "/post-request-upload.html";
       }
-
-      fullPath.append(filename);
-
-      std::ofstream outputFile(fullPath.c_str(),
-                               std::ios::binary | std::ios::out);
-
-      if (!outputFile.is_open()) {
-        std::cerr << "Error: Failed to create file!" << std::endl;
-        return;
-      }
-
-      outputFile << uploadBody;
-
-      // ! close output file
-      outputFile.close();
-
-      req.path = "/post-request-upload.html";
     }
   }
 
