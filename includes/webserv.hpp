@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/05 18:25:17 by mait-all         ###   ########.fr       */
+/*   Updated: 2026/01/05 18:32:03 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -155,7 +155,7 @@ class ConfigFile {
 //                                 Request Class                                  //
 // ****************************************************************************** //
 
-class Request : public Webserv {
+class Request : public Webserv, public ConfigFile {
 
   private:
     std::map<std::string, std::string>	request;

@@ -7,11 +7,10 @@ void ConfigFile::init_the_header_conf_default(){
     this->root = "pages";
     this->client_max_body_size = 1024;
     this->index = "index.html";
-    std::stringstream page;
-    for (size_t i = 403; i < 406; i++){
-        page << i;
-        this->error_page[i] = "errors/" + page.str() + ".html";
-    }
+    this->error_page[403] = "errors/403.html";
+    this->error_page[404] = "errors/404.html";
+    this->error_page[405] = "errors/405.html";
+    this->error_page[500] = "errors/500.html";
 }
 
 
