@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/06 10:47:14 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/06 21:39:28 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,6 +81,11 @@ void Response::setHeaders(const Request &req) {
                   this->getContentType() + getContentLength() + "\r\n";
 }
 
+// * index location
+size_t Response::getIndexLocation() const { return this->indexLocation; }
+
+void Response::setIndexLocation(size_t &value) { this->indexLocation = value; }
+
 void Response::setBodyFd(int &fd) { this->bodyFd = fd; }
 int Response::getBodyFd() const { return this->bodyFd; }
 
@@ -95,11 +100,34 @@ int Response::getBodyFd() const { return this->bodyFd; }
 
 // * GET METHOD
 void Response::GET_METHOD(Request &req) {
+  // * check permisions of method that come from config file
+  if (!req.config.locations.empty()) {
+    if (this->thisLocationIsInConfigFile(req, req.path, "get")) {
+      std::cout << "yes dkhaaaaaaaaaaaaaaaaaaaaaaaaaal\n";
+      // * change root path from config file when i found location
+      req.config.root = req.config.locations[this->getIndexLocation()].root;
+      // * change path from config file when i found location
+      req.path =
+          req.config.locations[this->getIndexLocation()]
+              .path.append("/")
+              .append(req.config.locations[this->getIndexLocation()].index);
+    }
+  }
+
+  // std::cout << "===============> req.config.root: " << req.config.root
+  //           << std::endl;
+  // std::cout << "===============> req.path: " << req.path << std::endl;
+
+  std::cout << "===============> req.path: " << req.path << std::endl;
   if (req.path == "/") {
     req.path = req.config.index;
-  } else {
-    req.path.erase(0, 1); // * remove / in fisrt request path
   }
+
+  // else {
+  //   req.path.erase(0, 1); // * remove / in fisrt request path
+  // }
+  std::cout << "===============> req.config.root: " << req.config.root
+            << std::endl;
 
   // * set status code as default
   this->setStatusCode(OK);
@@ -367,6 +395,31 @@ Response::parseFormURLEncoded(const std::string &post_body) {
   return result;
 }
 
+// * check location is in config file
+bool Response::thisLocationIsInConfigFile(Request &req, std::string &location,
+                                          std::string method) {
+  for (size_t i = 0; i < req.config.locations.size(); i++) {
+    if (req.config.locations[i].path == location) {
+      for (size_t j = 0; j < req.config.locations[i].allow_methods[j].size();
+           j++) {
+        if (req.config.locations[i].allow_methods[j] == method) {
+          this->setIndexLocation(i);
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// * is end by slash
+bool Response::isPathStartBySlash(const std::string &path) {
+  if (path[0] == '/') {
+    return true;
+  }
+  return false;
+}
+
 // * Method Not Allowed
 void Response::methodNotAllowed(Request &req) {
   // * set status code
@@ -393,7 +446,14 @@ void Response::generateResponse(Request &req) {
     if (req.method == POST && this->getStatusCode() == CREATED) {
       fullPath = req.path;
     } else {
-      fullPath = req.config.root;
+      // * handle slash after root path
+      // * we add slash only in path /
+      if (!this->isPathStartBySlash(req.path)) {
+        fullPath = req.config.root;
+        fullPath.append("/");
+      } else {
+        fullPath = req.config.root;
+      }
 
       // * add path to root directory
       fullPath.append(req.path);
@@ -407,7 +467,7 @@ void Response::generateResponse(Request &req) {
   // todo: the folder
   if (access(fullPath.c_str(), F_OK) == -1) {
     this->setStatusCode(NOT_FOUND);
-    fullPath = (req.config.root + req.config.error_page[NOT_FOUND]);
+    fullPath = (req.config.root + "/" + req.config.error_page[NOT_FOUND]);
     // * check if we have error page in root directory
     std::ifstream path(fullPath.c_str());
     if (!path.is_open()) {
@@ -416,7 +476,7 @@ void Response::generateResponse(Request &req) {
   } else if (access(fullPath.c_str(), R_OK) == -1 ||
              access(fullPath.c_str(), W_OK) == -1) {
     this->setStatusCode(FORBIDDEN);
-    fullPath = (req.config.root + req.config.error_page[FORBIDDEN]);
+    fullPath = (req.config.root + "/" + req.config.error_page[FORBIDDEN]);
     // * check if we have error page in root directory
     std::ifstream path(fullPath.c_str());
     if (!path.is_open()) {

@@ -4,7 +4,7 @@ void ConfigFile::init_the_header_conf_default(){
     this->listen.push_back(8080);
     this->server_name = "webserv/1.0";
     this->host = "127.0.0.1";
-    this->root = "pages/";
+    this->root = "pages";
     this->client_max_body_size = 1024;
     this->index = "index.html";
     this->error_page[403] = "errors/403.html";
@@ -17,7 +17,12 @@ void ConfigFile::init_the_header_conf_default(){
 
 void   parse_location(std::vector<std::string> &tokens, std::vector<std::string>::iterator &i, ConfigFile &conf){
     location location_to_push;
+    // struct stat fileStat;
     i++;
+    // if (stat(conf.root.substr(0, conf.root.size() - 1).append(*i).c_str(), &fileStat) == -1)
+    //     throw std::runtime_error("error syntax (config file stat)");
+    // if (S_ISREG(fileStat.st_mode))
+    //     throw std::runtime_error("error syntax (config file location path is not a dir)");
     location_to_push.path = *i;
     i++;
     if (i->compare("{"))
@@ -28,6 +33,8 @@ void   parse_location(std::vector<std::string> &tokens, std::vector<std::string>
         if (!i->compare("allow_methods"))
         {
             i++;
+            if (!i->compare(";"))
+                    throw std::runtime_error("error syntax (config file allow_methods)");
             while (i != tokens.end() && i->compare(";"))
             {
                 if (i->compare("delete") && i->compare("post") && i->compare("get"))
