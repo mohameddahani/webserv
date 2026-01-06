@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/06 09:25:11 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/06 10:47:14 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,7 +177,7 @@ void Response::POST_METHOD(Request &req) {
 
         // todo: i think i should make this path flexible (get from config file)
         this->setStatusCode(CREATED);
-        req.path = "post-request-upload.html";
+        req.path = "pages/post-request-upload.html";
       }
     }
   } else {
@@ -381,12 +381,24 @@ void Response::methodNotAllowed(Request &req) {
 
 // * Generate response
 void Response::generateResponse(Request &req) {
+  std::string fullPath;
+
   // * root directory
   // todo: check if we have the folder
-  std::string fullPath(req.config.root);
+  std::ifstream rootPath(req.config.root.c_str());
+  if (!rootPath.is_open()) {
+    this->setStatusCode(NOT_FOUND);
+    fullPath = "pages/errors/404.html";
+  } else {
+    if (req.method == POST && this->getStatusCode() == CREATED) {
+      fullPath = req.path;
+    } else {
+      fullPath = req.config.root;
 
-  // * add path to root directory
-  fullPath.append(req.path);
+      // * add path to root directory
+      fullPath.append(req.path);
+    }
+  }
 
   std::cout << "fullPath=====================> " << fullPath << std::endl;
 
@@ -396,10 +408,20 @@ void Response::generateResponse(Request &req) {
   if (access(fullPath.c_str(), F_OK) == -1) {
     this->setStatusCode(NOT_FOUND);
     fullPath = (req.config.root + req.config.error_page[NOT_FOUND]);
+    // * check if we have error page in root directory
+    std::ifstream path(fullPath.c_str());
+    if (!path.is_open()) {
+      fullPath = "pages/errors/404.html";
+    }
   } else if (access(fullPath.c_str(), R_OK) == -1 ||
              access(fullPath.c_str(), W_OK) == -1) {
     this->setStatusCode(FORBIDDEN);
     fullPath = (req.config.root + req.config.error_page[FORBIDDEN]);
+    // * check if we have error page in root directory
+    std::ifstream path(fullPath.c_str());
+    if (!path.is_open()) {
+      fullPath = "pages/errors/403.html";
+    }
   }
 
   // * status line
@@ -429,6 +451,9 @@ void Response::generateResponse(Request &req) {
   std::cout << getHeaders() << std::endl;
   std::cout << "-----------------------Headers------------------------"
             << std::endl;
+
+  // ! close root path
+  rootPath.close();
 }
 
 // * Response
