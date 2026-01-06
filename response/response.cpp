@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/05 18:47:38 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/06 09:25:11 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,7 +96,9 @@ int Response::getBodyFd() const { return this->bodyFd; }
 // * GET METHOD
 void Response::GET_METHOD(Request &req) {
   if (req.path == "/") {
-    req.path.append(req.config.index);
+    req.path = req.config.index;
+  } else {
+    req.path.erase(0, 1); // * remove / in fisrt request path
   }
 
   // * set status code as default
@@ -108,9 +110,6 @@ void Response::GET_METHOD(Request &req) {
 
 // * POST METHOD
 void Response::POST_METHOD(Request &req) {
-  // * set status code as default
-  this->setStatusCode(CREATED);
-
   // * get content type to decide which response will send in post method
   std::string contentType = req.getRequest().count("Content-Type")
                                 ? req.getRequest().find("Content-Type")->second
@@ -118,9 +117,11 @@ void Response::POST_METHOD(Request &req) {
 
   // ? application/x-www-form-urlencoded
   if (contentType == "application/x-www-form-urlencoded\r") {
+    // * set status code as default
+    this->setStatusCode(OK);
     // * set all data in html page
     this->addDataToBody(req);
-    req.path = "/post-request-data.html";
+    req.path = "post-request-data.html";
   } else if (contentType.substr(0, 52) == // ? multipart/form-data;
                                           // ? boundary=----WebKitFormBoundary
              "multipart/form-data; boundary=----WebKitFormBoundary") {
@@ -130,14 +131,15 @@ void Response::POST_METHOD(Request &req) {
     // * check if the file is empty
     if (uploadBody.empty()) {
       // todo: i think i should make this path flexible (get from config file)
-      req.path = "/post-request-error-upload.html";
-      this->setStatusCode(NO_CONTENT);
-    } else if (uploadBody.length() / 1e6 >
-               req.config.client_max_body_size) { // * check file size by config file
-                                           // * convert from bytes to MB
       this->setStatusCode(FORBIDDEN);
+      req.path = req.config.error_page[FORBIDDEN];
+    } else if (uploadBody.length() / 1e6 >
+               req.config
+                   .client_max_body_size) { // * check file size by config file
+                                            // * convert from bytes to MB
       // todo: i think i should make this path flexible (get from config file)
-      req.path = "/errors/403.html";
+      this->setStatusCode(PAYLOAD_TOO_LARGE);
+      req.path = req.config.error_page[PAYLOAD_TOO_LARGE];
     } else {
       std::string filename = req.getRequest().count("filename")
                                  ? req.getRequest().find("filename")->second
@@ -147,14 +149,14 @@ void Response::POST_METHOD(Request &req) {
         return;
       }
 
-      std::string fullPath = "uploads/";
+      std::string fullPath = (req.config.root + "uploads/");
 
       // * check the directory of upload
       std::ifstream uploadDir(fullPath.c_str());
       if (!uploadDir.is_open()) {
         this->setStatusCode(FORBIDDEN);
         // todo: i think i should make this path flexible (get from config file)
-        req.path = "/errors/403.html";
+        req.path = req.config.error_page[FORBIDDEN];
       } else {
         fullPath.append(filename);
 
@@ -174,9 +176,14 @@ void Response::POST_METHOD(Request &req) {
         outputFile.close();
 
         // todo: i think i should make this path flexible (get from config file)
-        req.path = "/post-request-upload.html";
+        this->setStatusCode(CREATED);
+        req.path = "post-request-upload.html";
       }
     }
+  } else {
+    // todo: status code for forbidden request and add a page
+    this->setStatusCode(FORBIDDEN);
+    req.path = req.config.error_page[FORBIDDEN];
   }
 
   // * Generate response
@@ -286,9 +293,9 @@ void Response::addDataToBody(const Request &req) {
                               "</html>\n";
 
   // todo: get the root path
-  std::string fullPath("pages");
+  std::string fullPath(req.config.root);
 
-  fullPath.append(req.path);
+  fullPath.append("post-request-data.html");
 
   // ? std::ios::out open the file for write event and if not exist created
   // ? std::ios::trunc remove all things in file
@@ -381,18 +388,18 @@ void Response::generateResponse(Request &req) {
   // * add path to root directory
   fullPath.append(req.path);
 
+  std::cout << "fullPath=====================> " << fullPath << std::endl;
+
   // * check the file permissions and if the file exist
   // todo: change the path of error pages by config file and check if we have
   // todo: the folder
   if (access(fullPath.c_str(), F_OK) == -1) {
     this->setStatusCode(NOT_FOUND);
-    fullPath = (req.config.error_page[NOT_FOUND]);
-    // fullPath = "pages/errors/404.html";
+    fullPath = (req.config.root + req.config.error_page[NOT_FOUND]);
   } else if (access(fullPath.c_str(), R_OK) == -1 ||
              access(fullPath.c_str(), W_OK) == -1) {
     this->setStatusCode(FORBIDDEN);
-    fullPath = (req.config.error_page[FORBIDDEN]);
-    // fullPath = "pages/errors/403.html";
+    fullPath = (req.config.root + req.config.error_page[FORBIDDEN]);
   }
 
   // * status line
