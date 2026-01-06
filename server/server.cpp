@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 13:05:03 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/05 18:24:31 by mait-all         ###   ########.fr       */
+/*   Updated: 2026/01/06 09:29:17 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,7 +133,7 @@ void	Server::sendResponse(int epfd, int notifiedFd, Request &request)
 	}
 	if (clients[notifiedFd].isHeaderSent)
 	{
-		char	buffer[100];
+		char	buffer[MAX_BUFFER_SIZE];
 		ssize_t	bytesRead;
 		ssize_t	bytesSent;
 		bytesRead = read(res.getBodyFd(), buffer, sizeof(buffer));
@@ -212,13 +212,11 @@ void	Server::run(Request &req) {
 		
 		for (int i = 0; i < n_fds ; i++)
 		{
-			// case 1: new connection comes, we should accept it
-			if (events[i].data.fd == server_fd)
+			if (events[i].data.fd == server_fd) // case 1: new connection comes, we should accept it
 			{
 				setUpNewConnection(epoll_fd, server_fd, ev);
 			}
-			// case 2: handle client events (read/write/error)
-			else
+			else // case 2: handle client events (read/write/error)
 			{
 				int fd = events[i].data.fd;
 				

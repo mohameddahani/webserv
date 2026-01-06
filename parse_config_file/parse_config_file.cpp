@@ -7,11 +7,10 @@ void ConfigFile::init_the_header_conf_default(){
     this->root = "pages";
     this->client_max_body_size = 1024;
     this->index = "index.html";
-    std::stringstream page;
-    for (size_t i = 403; i < 406; i++){
-        page << i;
-        this->error_page[i] = "errors/" + page.str() + ".html";
-    }
+    this->error_page[403] = "errors/403.html";
+    this->error_page[404] = "errors/404.html";
+    this->error_page[405] = "errors/405.html";
+    this->error_page[500] = "errors/500.html";
 }
 
 
@@ -94,6 +93,8 @@ void   check_errors_and_init_config_server(std::vector<std::string> &tokens, Con
                 i++;
             else if (!i->compare("listen"))
             {
+				if (index == 0)
+					conf.listen.clear();
                 i++;
                 for (size_t j = 0; j < i->size(); j++)
                 {
@@ -105,7 +106,7 @@ void   check_errors_and_init_config_server(std::vector<std::string> &tokens, Con
                     throw std::runtime_error("error syntax (config file listen)");
                 if (index == 0)
                 {
-                    conf.listen[index] = n;
+                    conf.listen.push_back(n);
                     index++;
                 }
                 else
@@ -160,7 +161,7 @@ void   check_errors_and_init_config_server(std::vector<std::string> &tokens, Con
                         throw std::runtime_error("error syntax (config file error_page)");
                 }
                 i++;
-                conf.error_page[atoi(i->c_str())] = *i;
+                conf.error_page[atoi((i - 1)->c_str())] = *i;
                 i++;
                 if (i->compare(";"))
                     throw std::runtime_error("error syntax (config file error_page)");

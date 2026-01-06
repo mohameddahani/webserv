@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
+/*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/05 17:17:55 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/06 08:41:21 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ std::string Response::getStatusLine() const { return this->statusLine; }
 
 // * server name
 std::string Response::getServerName(const Request &req) const {
-  return "Server: " + req.server_name + "\r\n";
+  return "Server: " + req.config.server_name + "\r\n";
 }
 
 // * content type
@@ -96,7 +96,7 @@ int Response::getBodyFd() const { return this->bodyFd; }
 // * GET METHOD
 void Response::GET_METHOD(Request &req) {
   if (req.path == "/") {
-    req.path.append(req.index);
+    req.path.append(req.config.index);
   }
 
   // * set status code as default
@@ -133,7 +133,7 @@ void Response::POST_METHOD(Request &req) {
       req.path = "/post-request-error-upload.html";
       this->setStatusCode(NO_CONTENT);
     } else if (uploadBody.length() / 1e6 >
-               req.client_max_body_size) { // * check file size by config file
+               req.config.client_max_body_size) { // * check file size by config file
                                            // * convert from bytes to MB
       this->setStatusCode(FORBIDDEN);
       // todo: i think i should make this path flexible (get from config file)
@@ -376,7 +376,7 @@ void Response::methodNotAllowed(Request &req) {
 void Response::generateResponse(Request &req) {
   // * root directory
   // todo: check if we have the folder
-  std::string fullPath(req.root);
+  std::string fullPath(req.config.root);
 
   // * add path to root directory
   fullPath.append(req.path);
@@ -386,12 +386,12 @@ void Response::generateResponse(Request &req) {
   // todo: the folder
   if (access(fullPath.c_str(), F_OK) == -1) {
     this->setStatusCode(NOT_FOUND);
-    fullPath = (req.error_page[NOT_FOUND]);
+    fullPath = (req.config.error_page[NOT_FOUND]);
     // fullPath = "pages/errors/404.html";
   } else if (access(fullPath.c_str(), R_OK) == -1 ||
              access(fullPath.c_str(), W_OK) == -1) {
     this->setStatusCode(FORBIDDEN);
-    fullPath = (req.error_page[FORBIDDEN]);
+    fullPath = (req.config.error_page[FORBIDDEN]);
     // fullPath = "pages/errors/403.html";
   }
 
