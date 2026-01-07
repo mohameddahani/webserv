@@ -10,13 +10,20 @@ void ConfigFile::init_the_header_conf_default(){
     this->error_page[403] = "errors/403.html";
     this->error_page[404] = "errors/404.html";
     this->error_page[405] = "errors/405.html";
+    this->error_page[413] = "errors/413.html";
     this->error_page[500] = "errors/500.html";
 }
 
 
 void   parse_location(std::vector<std::string> &tokens, std::vector<std::string>::iterator &i, ConfigFile &conf){
     location location_to_push;
+    location_to_push.autoindex = false;
+    // struct stat fileStat;
     i++;
+    // if (stat(conf.root.substr(0, conf.root.size() - 1).append(*i).c_str(), &fileStat) == -1)
+    //     throw std::runtime_error("error syntax (config file stat)");
+    // if (S_ISREG(fileStat.st_mode))
+    //     throw std::runtime_error("error syntax (config file location path is not a dir)");
     location_to_push.path = *i;
     i++;
     if (i->compare("{"))
@@ -27,6 +34,8 @@ void   parse_location(std::vector<std::string> &tokens, std::vector<std::string>
         if (!i->compare("allow_methods"))
         {
             i++;
+            if (!i->compare(";"))
+                    throw std::runtime_error("error syntax (config file allow_methods)");
             while (i != tokens.end() && i->compare(";"))
             {
                 if (i->compare("delete") && i->compare("post") && i->compare("get"))
