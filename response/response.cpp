@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/07 17:10:15 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/07 17:11:11 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,13 +100,6 @@ int Response::getBodyFd() const { return this->bodyFd; }
 
 // * GET METHOD
 void Response::GET_METHOD(Request &req) {
-<<<<<<< HEAD
-  if (req.path == "/") {
-    req.path.append(req.config.index);
-  }
-
-=======
->>>>>>> mdahani
   // * set status code as default
   this->setStatusCode(OK);
 
