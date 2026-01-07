@@ -6,7 +6,7 @@
 /*   By: mait-all <mait-all@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/07 08:59:57 by mait-all         ###   ########.fr       */
+/*   Updated: 2026/01/07 15:13:55 by mait-all         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,15 +116,18 @@ class Server : public Webserv {
 		void	setNonBlocking(int fd);
 		bool	isCompleteRequest(std::string &request);
 		size_t	getContentLength(std::string &request);
-		void	setUpNewConnection(int epfd, int serverFd, epoll_event ev);
+		void	setUpNewConnection(int epfd, int serverFd, epoll_event& ev);
 		bool	recvRequest(int epfd, int notifiedFd, epoll_event ev);
-		void	sendResponse(int epfd, int notifiedFd, Request &request);
+		bool	sendResponse(int epfd, int notifiedFd, Request &request);
 		void	initServerAddress();
 		void	createServerSocket();
 		void	bindServerSocket();
 		void	startListening();
 		void	createEpollInstance();
 		void	addServerToEpoll();
+		void	handleEpollEvents(int nfds, struct epoll_event* events, Request& req);
+		void	processClientEvent(struct epoll_event& event, Request& req);
+		void	processServerEvent(struct epoll_event& ev);
 		void	run(Request &req);
 };
 
