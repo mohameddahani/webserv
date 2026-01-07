@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/06 21:18:21 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/07 15:50:05 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -227,7 +227,9 @@ class Response : public Webserv {
     void addDataToBody(const Request &req);
     std::map<std::string, std::string>
     parseFormURLEncoded(const std::string &post_body);
-    bool thisLocationIsInConfigFile(Request &req, std::string &location, std::string method);
+    bool thisLocationIsInConfigFile(Request &req, std::string &location);
+    bool checkAllowMethodsOfLocation(std::vector<std::string> &allowMethods, std::string method);
+    std::string generatePageOfAutoIndex(Request &req, std::string &pathOfAutoIndex);
     bool isPathStartBySlash(const std::string &path);
     void generateResponse(Request &req);
     void methodNotAllowed(Request &req);

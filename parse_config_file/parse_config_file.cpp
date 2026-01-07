@@ -17,6 +17,7 @@ void ConfigFile::init_the_header_conf_default(){
 
 void   parse_location(std::vector<std::string> &tokens, std::vector<std::string>::iterator &i, ConfigFile &conf){
     location location_to_push;
+    location_to_push.autoindex = false;
     // struct stat fileStat;
     i++;
     // if (stat(conf.root.substr(0, conf.root.size() - 1).append(*i).c_str(), &fileStat) == -1)

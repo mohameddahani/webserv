@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/06 21:39:28 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/07 17:05:21 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,17 +100,49 @@ int Response::getBodyFd() const { return this->bodyFd; }
 
 // * GET METHOD
 void Response::GET_METHOD(Request &req) {
+  // * set status code as default
+  this->setStatusCode(OK);
+
   // * check permisions of method that come from config file
   if (!req.config.locations.empty()) {
-    if (this->thisLocationIsInConfigFile(req, req.path, "get")) {
-      std::cout << "yes dkhaaaaaaaaaaaaaaaaaaaaaaaaaal\n";
-      // * change root path from config file when i found location
-      req.config.root = req.config.locations[this->getIndexLocation()].root;
-      // * change path from config file when i found location
-      req.path =
-          req.config.locations[this->getIndexLocation()]
-              .path.append("/")
-              .append(req.config.locations[this->getIndexLocation()].index);
+    if (this->thisLocationIsInConfigFile(req, req.path)) {
+      if (this->checkAllowMethodsOfLocation(
+              req.config.locations[this->getIndexLocation()].allow_methods,
+              "get")) {
+        // * generate page of auto index
+        if (req.config.locations[this->getIndexLocation()].autoindex) {
+          // todo: 3lach makidlholch hnaaaa
+          std::string pathOfAutoIndex =
+              req.config.locations[this->getIndexLocation()].root +
+              req.config.locations[this->getIndexLocation()].path;
+          req.path = this->generatePageOfAutoIndex(req, pathOfAutoIndex);
+          std::cout << "################page auto index is on################: "
+                    << req.config.locations[this->getIndexLocation()].autoindex
+                    << std::endl;
+        }
+        // * check if autoindex is off and we dont have a index html
+        else if (!req.config.locations[this->getIndexLocation()].autoindex &&
+                 req.config.locations[this->getIndexLocation()].index.empty()) {
+          // todo: 3lach makidlholch hnaaaa
+          std::cout << "################page is forbidden################\n";
+          this->setStatusCode(FORBIDDEN);
+          req.path = req.config.error_page[FORBIDDEN];
+        }
+
+        else {
+          // * change root path from config file when i found location and
+          // method
+          req.config.root = req.config.locations[this->getIndexLocation()].root;
+          // * change path from config file when i found location and method
+          req.path =
+              req.config.locations[this->getIndexLocation()]
+                  .path.append("/")
+                  .append(req.config.locations[this->getIndexLocation()].index);
+        }
+      } else {
+        this->setStatusCode(METHOD_NOT_ALLOWED);
+        req.path = req.config.error_page[METHOD_NOT_ALLOWED];
+      }
     }
   }
 
@@ -129,15 +161,32 @@ void Response::GET_METHOD(Request &req) {
   std::cout << "===============> req.config.root: " << req.config.root
             << std::endl;
 
-  // * set status code as default
-  this->setStatusCode(OK);
-
   // * Generate response
   this->generateResponse(req);
 }
 
 // * POST METHOD
 void Response::POST_METHOD(Request &req) {
+  // todo: edit this
+  if (!req.config.locations.empty()) {
+    if (this->thisLocationIsInConfigFile(req, req.path)) {
+      if (this->checkAllowMethodsOfLocation(
+              req.config.locations[this->getIndexLocation()].allow_methods,
+              "get")) {
+        // * change root path from config file when i found location and method
+        req.config.root = req.config.locations[this->getIndexLocation()].root;
+        // * change path from config file when i found location and method
+        req.path =
+            req.config.locations[this->getIndexLocation()]
+                .path.append("/")
+                .append(req.config.locations[this->getIndexLocation()].index);
+      } else {
+        this->setStatusCode(METHOD_NOT_ALLOWED);
+        req.path = req.config.error_page[METHOD_NOT_ALLOWED];
+      }
+    }
+  }
+
   // * get content type to decide which response will send in post method
   std::string contentType = req.getRequest().count("Content-Type")
                                 ? req.getRequest().find("Content-Type")->second
@@ -396,20 +445,40 @@ Response::parseFormURLEncoded(const std::string &post_body) {
 }
 
 // * check location is in config file
-bool Response::thisLocationIsInConfigFile(Request &req, std::string &location,
-                                          std::string method) {
+bool Response::thisLocationIsInConfigFile(Request &req, std::string &location) {
   for (size_t i = 0; i < req.config.locations.size(); i++) {
     if (req.config.locations[i].path == location) {
-      for (size_t j = 0; j < req.config.locations[i].allow_methods[j].size();
-           j++) {
-        if (req.config.locations[i].allow_methods[j] == method) {
-          this->setIndexLocation(i);
-          return true;
-        }
-      }
+      this->setIndexLocation(i);
+      return true;
     }
   }
   return false;
+}
+
+// * check allow methods of location
+bool Response::checkAllowMethodsOfLocation(
+    std::vector<std::string> &allowMethods, std::string method) {
+  // * if the user don't specifec any methods so allow him to use all of them
+  if (allowMethods.empty()) {
+    return true;
+  }
+
+  for (size_t i = 0; i < allowMethods.size(); i++) {
+    if (allowMethods[i] == method) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// * generate page of
+std::string Response::generatePageOfAutoIndex(Request &req,
+                                              std::string &pathOfAutoIndex) {
+  std::ifstream path(pathOfAutoIndex.c_str());
+  if (!path.is_open()) {
+    return req.config.error_page[NOT_FOUND];
+  }
+  return "";
 }
 
 // * is end by slash
