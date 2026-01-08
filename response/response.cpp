@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/07 17:11:11 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/08 10:37:05 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,6 +105,7 @@ void Response::GET_METHOD(Request &req) {
 
   // * check permisions of method that come from config file
   if (!req.config.locations.empty()) {
+
     if (this->thisLocationIsInConfigFile(req, req.path)) {
       if (this->checkAllowMethodsOfLocation(
               req.config.locations[this->getIndexLocation()].allow_methods,
@@ -131,7 +132,7 @@ void Response::GET_METHOD(Request &req) {
 
         else {
           // * change root path from config file when i found location and
-          // method
+          // * method
           req.config.root = req.config.locations[this->getIndexLocation()].root;
           // * change path from config file when i found location and method
           req.path =
@@ -312,6 +313,7 @@ std::string Response::statusCodeDescription(STATUS_CODE statusCode) {
 size_t Response::countBodyLength(const std::string &path) {
   struct stat buffer;
 
+  // * get all status of path (size, type, ...)
   if (stat(path.c_str(), &buffer) == -1) {
     return 0;
   }
@@ -446,6 +448,12 @@ Response::parseFormURLEncoded(const std::string &post_body) {
 
 // * check location is in config file
 bool Response::thisLocationIsInConfigFile(Request &req, std::string &location) {
+  // * remove last char if he is '/'
+  if (!location.empty() && location != "/" &&
+      location[location.length() - 1] == '/') {
+    location.erase(location.length() - 1);
+  }
+
   for (size_t i = 0; i < req.config.locations.size(); i++) {
     if (req.config.locations[i].path == location) {
       this->setIndexLocation(i);
@@ -474,18 +482,156 @@ bool Response::checkAllowMethodsOfLocation(
 // * generate page of
 std::string Response::generatePageOfAutoIndex(Request &req,
                                               std::string &pathOfAutoIndex) {
-  std::ifstream path(pathOfAutoIndex.c_str());
-  if (!path.is_open()) {
+  // * open directory not file
+  DIR *dir =
+      opendir(pathOfAutoIndex
+                  .c_str()); // * DIR is data type of directory stream objects
+  if (!dir) {                // * if not open this directory than return null
     return req.config.error_page[NOT_FOUND];
   }
-  return "";
+
+  // * generate html of auto index
+  std::string beforTitle =
+      "<!DOCTYPE html>\n"
+      "<html lang=\"en\">\n"
+      "  <head>\n"
+      "    <meta charset=\"UTF-8\" />\n"
+      "    <meta name=\"viewport\" content=\"width=device-width, "
+      "initial-scale=1.0\" />\n"
+      "    <script "
+      "src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></script>\n"
+      "    <title>Index of /uploads</title>\n"
+      "  </head>\n"
+      "  <body class=\"min-h-screen bg-slate-900 text-slate-100 p-10\">\n"
+      "    <div class=\"max-w-3xl mx-auto\">\n";
+
+  std::string title = "<h1 class=\"text-3xl font-bold mb-6\">\n"
+                      "  📂 Index of <span class=\"text-blue-400\">" +
+                      req.config.locations[this->getIndexLocation()].path +
+                      "</span>\n"
+                      "</h1>\n"
+
+                      "<p class=\"text-sm text-slate-400 mb-6\">\n"
+                      "  📁 Directory listing generated automatically\n"
+                      "</p>\n"
+
+                      "<div class=\"grid grid-cols-12 gap-4 border-b "
+                      "border-slate-700 pb-2 mb-4 text-slate-400 text-sm\">\n"
+                      "  <div class=\"col-span-6\">Name</div>\n"
+                      "  <div class=\"col-span-3\">Type</div>\n"
+                      "  <div class=\"col-span-3 text-right\">Size</div>\n"
+                      "</div>\n"
+
+                      "<ul class=\"space-y-2 text-sm\">\n";
+
+  std::string footer =
+      "<footer class=\"mt-10 text-center text-xs text-slate-500\">\n"
+      "  ⚙️ webserv • autoindex\n"
+      "</footer>\n"
+      "</div>\n"
+      "</body>\n"
+      "</html>\n";
+  std::string filesAndFolders;
+
+  // * this struct catch every file or folder in directory
+  struct dirent *entry;
+  while ((entry = readdir(dir))) {
+    if (entry->d_name[0] == '.')
+      continue;
+
+    // * Get file size in bytes
+    size_t fileSize =
+        this->countBodyLength(pathOfAutoIndex + "/" + entry->d_name);
+
+    // * Convert to KB for display
+    size_t fileSizeKB = fileSize / 1024;
+    if (fileSize % 1024 != 0)
+      fileSizeKB += 1; // * round up
+
+    // * Convert size to string
+    std::stringstream ss;
+    ss << fileSizeKB;
+    std::string sizeOfEntry = ss.str();
+
+    if (entry->d_type == DT_REG) {
+      filesAndFolders.append(
+          "<li>\n"
+          "  <a\n"
+          "    href=\"" +
+          std::string(entry->d_name) +
+          "\"\n"
+          "    class=\"grid grid-cols-12 gap-4 hover:bg-slate-800 rounded px-2 "
+          "py-1\"\n"
+          "  >\n"
+          "    <span class=\"col-span-6\">📄 " +
+          std::string(entry->d_name) +
+          "</span>\n"
+          "    <span class=\"col-span-3 text-slate-400\">File</span>\n"
+          "    <span class=\"col-span-3 text-right text-slate-400\">" +
+          sizeOfEntry +
+          " KB</span>\n"
+          "  </a>\n"
+          "</li>\n");
+    } else if (entry->d_type == DT_DIR) {
+      filesAndFolders.append(
+          "<li>\n"
+          "  <a\n"
+          "    href=\"" +
+          std::string(entry->d_name) +
+          "/\"\n"
+          "    class=\"grid grid-cols-12 gap-4 hover:bg-slate-800 rounded px-2 "
+          "py-1\"\n"
+          "  >\n"
+          "    <span class=\"col-span-6 text-blue-400\">📁 " +
+          std::string(entry->d_name) +
+          "/</span>\n"
+          "    <span class=\"col-span-3 text-slate-400\">Directory</span>\n"
+          "    <span class=\"col-span-3 text-right text-slate-400\">—</span>\n"
+          "  </a>\n"
+          "</li>\n");
+    }
+  }
+
+  // ! close directory to remove leaks
+  closedir(dir);
+
+  std::string htmlOfAutoIndex = beforTitle + title + filesAndFolders + footer;
+
+  // * generate the file to send fd to multiplx
+  std::string fileName = "/autoindex.html";
+  std::ofstream fileOfAutoIndex((req.config.root + fileName).c_str(),
+                                std::ios::out | std::ios::trunc);
+  if (!fileOfAutoIndex.is_open()) {
+    return req.config.error_page[NOT_FOUND];
+  }
+
+  fileOfAutoIndex << htmlOfAutoIndex;
+
+  return fileName;
 }
 
-// * is end by slash
+// * is start by slash
 bool Response::isPathStartBySlash(const std::string &path) {
   if (path[0] == '/') {
     return true;
   }
+  return false;
+}
+
+// * check if a file
+bool Response::isFile(std::string &path) {
+  struct stat buffer;
+
+  // * get all status of path (size, type, ...)
+  if (stat(path.c_str(), &buffer) == -1) {
+    return false;
+  }
+
+  // * check the path is file or not
+  if (S_ISREG(buffer.st_mode)) {
+    return true;
+  }
+
   return false;
 }
 
@@ -534,7 +680,7 @@ void Response::generateResponse(Request &req) {
   // * check the file permissions and if the file exist
   // todo: change the path of error pages by config file and check if we have
   // todo: the folder
-  if (access(fullPath.c_str(), F_OK) == -1) {
+  if (access(fullPath.c_str(), F_OK) == -1 || !this->isFile(fullPath)) {
     this->setStatusCode(NOT_FOUND);
     fullPath = (req.config.root + "/" + req.config.error_page[NOT_FOUND]);
     // * check if we have error page in root directory
