@@ -228,11 +228,11 @@ void    ConfigFile::parse_config_file(char *av)
         file.append(line);
         line.clear();
     }
-    for (size_t i = 0; i < file.size(); i++)
-    {
-        if (file[i] >= 65 && file[i] <= 90)
-            throw std::runtime_error("we work with lower case only (config file)");
-    }
+    // for (size_t i = 0; i < file.size(); i++)
+    // {
+    //     if (file[i] >= 65 && file[i] <= 90)
+    //         throw std::runtime_error("we work with lower case only (config file)");
+    // }
     size_t end = 0;
     size_t start;
     while (end < file.size())
