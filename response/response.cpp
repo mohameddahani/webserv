@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/08 20:12:39 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/09 13:00:16 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,23 +86,17 @@ std::string Response::getContentLength() const { return this->contentLength; }
 std::string Response::getHeaders() const { return this->headers; }
 
 void Response::setHeaders(const Request &req) {
-  // if (!req.config.locations[getIndexLocation()].return_to.empty()) {
-  //   this->headers = "HTTP/1.1 302 Found\r\n"
-  //                   "Server: webserv/1.0\r\n"
-  //                   "Location:
-  //                   https://www.youtube.com/watch?v=ADBV0_848UE\r\n"
-  //                   "\r\n";
-
-  //   return;
-  // }
-
   // * check if is redirection
   if (this->getIsRedirection() && this->getStatusCode() == FOUND) {
     this->headers = this->getStatusLine() + getServerName(req) + "Location: " +
                     req.config.locations[this->getIndexLocation()].return_to +
                     "\r\n";
     this->setIsRedirection(false);
+  } else if (req.method == DELETE && this->getStatusCode() == NO_CONTENT) {
+    // * this for delete response
+    this->headers = this->getStatusLine() + getServerName(req) + "\r\n";
   } else {
+    // * this for normal response
     this->headers = this->getStatusLine() + getServerName(req) +
                     this->getContentType() + getContentLength() + "\r\n";
   }
@@ -307,8 +301,49 @@ void Response::POST_METHOD(Request &req) {
         outputFile.close();
 
         // todo: i think i should make this path flexible (get from config file)
+        // * status code
         this->setStatusCode(CREATED);
-        req.path = "pages/post-request-upload.html";
+
+        // * generate response page
+        std::ofstream responseFile(
+            (req.config.root + "/post-request-upload.html").c_str(),
+            std::ios::out | std::ios::trunc);
+        if (!responseFile.is_open()) {
+          // todo: print error in terminal
+          std::cerr << "file is not created(Upload file)" << std::endl;
+          return;
+        }
+
+        std::string responseData =
+            "<!DOCTYPE html>\n"
+            "<html lang=\"en\">\n"
+            "  <head>\n"
+            "    <meta charset=\"UTF-8\" />\n"
+            "    <meta name=\"viewport\" content=\"width=device-width, "
+            "initial-scale=1.0\" />\n"
+            "    <script "
+            "src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></"
+            "script>\n"
+            "    <title>POST Request Upload</title>\n"
+            "  </head>\n"
+            "\n"
+            "  <body class=\"min-h-screen bg-black flex items-center "
+            "justify-center\">\n"
+            "    <!-- Card -->\n"
+            "    <div\n"
+            "      class=\"bg-zinc-900 border border-zinc-700 rounded-xl "
+            "shadow-lg p-6 w-full max-w-xl\"\n"
+            "    >\n"
+            "\n"
+            "      <h1 class=\"text-xl font-bold text-white text-center\">\n"
+            "        POST Request File Uploaded Successfully ✅\n"
+            "      </h1>\n"
+            "    </div>\n"
+            "  </body>\n"
+            "</html>\n";
+
+        responseFile << responseData;
+        req.path = "post-request-upload.html";
       }
     }
   } else {
@@ -323,8 +358,24 @@ void Response::POST_METHOD(Request &req) {
 
 // * DELETE METHOD
 void Response::DELETE_METHOD(Request &req) {
-  // * set status code as default
-  this->setStatusCode(OK);
+  // * check if we have the file / folder
+  // * remove slash from begin of req path
+  std::ifstream file((req.config.root + req.path).c_str());
+  if (!file.is_open()) {
+    // todo: why page not found is not work
+    this->setStatusCode(NOT_FOUND);
+    req.path = req.config.error_page[NOT_FOUND];
+  } else {
+    if (std::remove((req.config.root + req.path).c_str()) == 0) {
+      // * set status code
+      this->setStatusCode(NO_CONTENT);
+      this->setStatusLine(req.httpV, statusCodeDescription(getStatusCode()));
+      this->setHeaders(req);
+      return;
+    }
+    this->setStatusCode(FORBIDDEN);
+    req.path = req.config.error_page[FORBIDDEN];
+  }
 
   // * Generate response
   this->generateResponse(req);
@@ -690,10 +741,12 @@ bool Response::isFile(std::string &path) {
 
 // * Method Not Allowed
 void Response::methodNotAllowed(Request &req) {
+  // todo: link the fullPath (page of METHOD_NOT_ALLOWED) with configfile
   // * set status code
   this->setStatusCode(METHOD_NOT_ALLOWED);
 
   // * full path
+  // todo: get error from config file
   std::string fullPath = "pages/errors/405.html";
 
   // * Generate response
@@ -709,23 +762,24 @@ void Response::generateResponse(Request &req) {
   std::ifstream rootPath(req.config.root.c_str());
   if (!rootPath.is_open()) {
     this->setStatusCode(NOT_FOUND);
+    // todo: get page from confige file
     fullPath = "pages/errors/404.html";
   } else {
-    if (req.method == POST && this->getStatusCode() == CREATED) {
-      fullPath = req.path;
+    // if (req.method == POST && this->getStatusCode() == CREATED) {
+    //   fullPath = req.path;
+    // } else {
+    // * handle slash after root path
+    // * we add slash only in path /
+    if (!this->isPathStartBySlash(req.path)) {
+      fullPath = req.config.root;
+      fullPath.append("/");
     } else {
-      // * handle slash after root path
-      // * we add slash only in path /
-      if (!this->isPathStartBySlash(req.path)) {
-        fullPath = req.config.root;
-        fullPath.append("/");
-      } else {
-        fullPath = req.config.root;
-      }
-
-      // * add path to root directory
-      fullPath.append(req.path);
+      fullPath = req.config.root;
     }
+
+    // * add path to root directory
+    fullPath.append(req.path);
+    // }
   }
 
   std::cout << "fullPath=====================> " << fullPath << std::endl;
@@ -739,6 +793,7 @@ void Response::generateResponse(Request &req) {
     // * check if we have error page in root directory
     std::ifstream path(fullPath.c_str());
     if (!path.is_open()) {
+      // todo: get error from config file
       fullPath = "pages/errors/404.html";
     }
   } else if (access(fullPath.c_str(), R_OK) == -1 ||
@@ -748,6 +803,7 @@ void Response::generateResponse(Request &req) {
     // * check if we have error page in root directory
     std::ifstream path(fullPath.c_str());
     if (!path.is_open()) {
+      // todo: get error from config file
       fullPath = "pages/errors/403.html";
     }
   }

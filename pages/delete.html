@@ -7,8 +7,16 @@
     <title>DELETE</title>
   </head>
   <body
-    class="text-white w-full pt-60 px-5 bg-[#374151] flex justify-center items-center"
+    class="text-white w-full pt-20 px-5 bg-[#374151] flex flex-col gap-10 justify-center items-center"
   >
+    <!-- Card -->
+    <div
+      class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-lg p-6 w-full max-w-xl"
+      >
+      <h1 class="text-xl font-bold text-white text-center" id="response-status">
+        No Response!
+      </h1>
+    </div>
     <div class="bg-[#1F2937] p-5 rounded-lg flex flex-col gap-5">
       <h3 class="font-bold text-lg">Delete a file 🗑️</h3>
       <div class="flex flex-col gap-2">
@@ -38,10 +46,26 @@
   </body>
   <script>
     const input = document.getElementById("delete");
+    const responseStatus = document.getElementById("response-status");
 
-    const DELETE_METHOD = () => {
-      let inputFile = input.value;
-      console.log(inputFile);
+    const DELETE_METHOD = async () => {
+      let URI = await input.value.trim();
+      console.log(URI);
+      try {
+        const response = await fetch(URI, {
+          method: "DELETE",
+        });
+        if (response.ok) {
+          console.log(response);
+          // * make response show
+          responseStatus.innerHTML = "DELETE Response File/Folder Deleted Successfully ✅";
+        } else {
+          responseStatus.innerHTML = "DELETE Response File/Folder Not Found 🚫";
+          throw new Error("Failed to fetch data");
+        }
+      } catch (error) {
+        console.log("Error: ", error.message);
+      }
     };
   </script>
 </html>

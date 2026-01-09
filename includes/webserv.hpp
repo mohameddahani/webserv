@@ -6,30 +6,30 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 15:59:16 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/08 19:59:26 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/09 12:49:49 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef WEBSERV_HPP
 #define WEBSERV_HPP
+#include <algorithm>
+#include <arpa/inet.h>
 #include <climits>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <dirent.h>
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <vector>
-#include <algorithm>
-#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sstream>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <dirent.h>
+#include <vector>
 #define PORT 8080
 #define IP INADDR_ANY
 #define IPv4 AF_INET
@@ -37,9 +37,11 @@
 #define MAX_BUFFER_SIZE 4096
 #define MAX_EVENTS 1024
 
-// ****************************************************************************** //
-//                                  Webserv Class                                 //
-// ****************************************************************************** //
+// ******************************************************************************
+// //
+//                                  Webserv Class //
+// ******************************************************************************
+// //
 
 class Webserv {
 
@@ -78,116 +80,123 @@ class Webserv {
     void throwError(std::string func);
 };
 
-// ****************************************************************************** //
-//                                  Server Class                                  //
-// ****************************************************************************** //
+// ******************************************************************************
+// //
+//                                  Server Class //
+// ******************************************************************************
+// //
 
 class Request;
 
 typedef struct s_clientState {
-	int			fd;
-    std::string	request;
-    size_t		bytes_received;
-    size_t		content_length;
-    bool		isPostRequest;
-    bool		headers_complete;
-    bool		request_complete;
-    bool		isHeaderSent;
+    int fd;
+    std::string request;
+    size_t bytes_received;
+    size_t content_length;
+    bool isPostRequest;
+    bool headers_complete;
+    bool request_complete;
+    bool isHeaderSent;
 
-	s_clientState(): fd(-1), bytes_received(0), content_length(0), isPostRequest(false), headers_complete(false), request_complete(false), isHeaderSent(false) {};
+    s_clientState()
+        : fd(-1), bytes_received(0), content_length(0), isPostRequest(false),
+          headers_complete(false), request_complete(false),
+          isHeaderSent(false) {};
 
 } t_clientState;
 
 class Server : public Webserv {
-	private:
-		int								_sockfd;
-		int								_epollfd;
-		int								_port;
-		std::string						_host;
-		struct sockaddr_in				_serverAddr;
+  private:
+    int _sockfd;
+    int _epollfd;
+    int _port;
+    std::string _host;
+    struct sockaddr_in _serverAddr;
 
-	public:
-		std::map<int, t_clientState>	clients;
+  public:
+    std::map<int, t_clientState> clients;
 
-		Server();
-		Server(std::string& host, int port);
+    Server();
+    Server(std::string &host, int port);
 
-		int		getSockFd() const;
-		void	setSockFd(int fd);
-		void	setNonBlocking(int fd);
-		bool	isCompleteRequest(std::string &request);
-		size_t	getContentLength(std::string &request);
-		void	setUpNewConnection(int epfd, int serverFd, epoll_event& ev);
-		bool	recvRequest(int epfd, int notifiedFd, epoll_event ev);
-		bool	sendResponse(int epfd, int notifiedFd, Request &request);
-		void	initServerAddress();
-		void	createServerSocket();
-		void	bindServerSocket();
-		void	startListening();
-		void	createEpollInstance();
-		void	addServerToEpoll();
-		void	handleEpollEvents(int nfds, struct epoll_event* events, Request& req);
-		void	processClientEvent(struct epoll_event& event, Request& req);
-		void	processServerEvent(struct epoll_event& ev);
-		void	run(Request &req);
+    int getSockFd() const;
+    void setSockFd(int fd);
+    void setNonBlocking(int fd);
+    bool isCompleteRequest(std::string &request);
+    size_t getContentLength(std::string &request);
+    void setUpNewConnection(int epfd, int serverFd, epoll_event &ev);
+    bool recvRequest(int epfd, int notifiedFd, epoll_event ev);
+    bool sendResponse(int epfd, int notifiedFd, Request &request);
+    void initServerAddress();
+    void createServerSocket();
+    void bindServerSocket();
+    void startListening();
+    void createEpollInstance();
+    void addServerToEpoll();
+    void handleEpollEvents(int nfds, struct epoll_event *events, Request &req);
+    void processClientEvent(struct epoll_event &event, Request &req);
+    void processServerEvent(struct epoll_event &ev);
+    void run(Request &req);
 };
 
+// ******************************************************************************
+// //
+//                               ConfigFile Class //
+// ******************************************************************************
+// //
 
-// ****************************************************************************** //
-//                               ConfigFile Class                                 //
-// ****************************************************************************** //
-
-typedef struct location
-{
-    std::string					path;
-    std::vector<std::string>	allow_methods;
-    bool						autoindex;
-    std::string					root;
-    std::string					return_to;
-    std::string					index;
+typedef struct location {
+    std::string path;
+    std::vector<std::string> allow_methods;
+    bool autoindex;
+    std::string root;
+    std::string return_to;
+    std::string index;
 } location;
 
 class ConfigFile {
-	public:
-		std::vector<int> listen;
-		std::string server_name;
-		std::string host;
-		std::string root;
-		int client_max_body_size;
-		std::string index;
-		std::map<int, std::string> error_page;
-		std::vector<location> locations;
-		std::vector<std::string> cgi_path;
-		std::vector<std::string> cgi_ext;
+  public:
+    std::vector<int> listen;
+    std::string server_name;
+    std::string host;
+    std::string root;
+    int client_max_body_size;
+    std::string index;
+    std::map<int, std::string> error_page;
+    std::vector<location> locations;
+    std::vector<std::string> cgi_path;
+    std::vector<std::string> cgi_ext;
 
-		void  init_the_header_conf_default();
-    	void  parse_config_file(char *av);
+    void init_the_header_conf_default();
+    void parse_config_file(char *av);
 };
 
-
-// ****************************************************************************** //
-//                                 Request Class                                  //
-// ****************************************************************************** //
+// ******************************************************************************
+// //
+//                                 Request Class //
+// ******************************************************************************
+// //
 
 class Request : public Webserv {
 
   private:
-    std::map<std::string, std::string>	request;
+    std::map<std::string, std::string> request;
 
   public:
-    METHOD		method;
-    std::string	path;
-    std::string	httpV;
-	  ConfigFile	config;
+    METHOD method;
+    std::string path;
+    std::string httpV;
+    ConfigFile config;
 
-    void	setRequest(const std::string &req);
-    const	std::map<std::string, std::string> &getRequest() const;
+    void setRequest(const std::string &req);
+    const std::map<std::string, std::string> &getRequest() const;
 };
 
-
-// ****************************************************************************** //
-//                                 Response Class                                 //
-// ****************************************************************************** //
+// ******************************************************************************
+// //
+//                                 Response Class //
+// ******************************************************************************
+// //
 
 class Response : public Webserv {
   private:
@@ -226,7 +235,7 @@ class Response : public Webserv {
 
     std::string getHeaders() const;
     void setHeaders(const Request &req);
-  
+
     size_t getIndexLocation() const;
     void setIndexLocation(size_t &value);
 
@@ -246,8 +255,10 @@ class Response : public Webserv {
     std::map<std::string, std::string>
     parseFormURLEncoded(const std::string &post_body);
     bool thisLocationIsInConfigFile(Request &req, std::string &location);
-    bool checkAllowMethodsOfLocation(std::vector<std::string> &allowMethods, std::string method);
-    std::string generatePageOfAutoIndex(Request &req, std::string &pathOfAutoIndex);
+    bool checkAllowMethodsOfLocation(std::vector<std::string> &allowMethods,
+                                     std::string method);
+    std::string generatePageOfAutoIndex(Request &req,
+                                        std::string &pathOfAutoIndex);
     bool isPathStartBySlash(const std::string &path);
     bool isFile(std::string &path);
     void generateResponse(Request &req);

@@ -2,3 +2,4 @@
 2- check all types of post request
 3- sign-in not work any more :( (all post not work) shiiiiiiiiiiiiiiiiiit;
 4- when i set -1 to bodyFd in default Constructor some pages is not work
+5- when delete request failed is not show error page like 404 ...
