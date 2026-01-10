@@ -6,7 +6,7 @@
 /*   By: mdahani <mdahani@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 10:45:08 by mdahani           #+#    #+#             */
-/*   Updated: 2026/01/10 10:20:15 by mdahani          ###   ########.fr       */
+/*   Updated: 2026/01/10 10:25:34 by mdahani          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -844,7 +844,7 @@ void Response::methodNotAllowed(Request &req) {
 
   // * full path
   // todo: get error from config file
-  std::string fullPath = "pages/errors/405.html";
+  req.path = req.config.error_page[METHOD_NOT_ALLOWED];
 
   // * Generate response
   this->generateResponse(req);
