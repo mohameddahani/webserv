@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <title>لعبة المسابقات الإسلامية</title>
+  </head>
+
+  <body class="font-[Almarai] text-white w-full px-5 relative overflow-hidden">
+    <!-- Background -->
+    <div class="fixed inset-0 -z-10">
+      <div
+        class="relative h-full w-full bg-black [&>div]:absolute [&>div]:left-0 [&>div]:right-0 [&>div]:top-[-10%] [&>div]:h-[1000px] [&>div]:w-[1000px] [&>div]:rounded-full [&>div]:bg-[radial-gradient(circle_400px_at_50%_300px,#fbfbfb36,#000)]"
+      >
+        <div></div>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <section
+      id="hero"
+      class="relative h-screen flex items-center justify-center transition-all duration-700 ease-in-out"
+    >
+      <div class="max-w-3xl text-center">
+        <h1
+          class="leading-relaxed mb-8 text-4xl font-bold sm:text-6xl lg:text-7xl"
+        >
+          مرحبًا بك في <span class="text-sky-400">المسابقات الإسلامية</span>
+        </h1>
+
+        <p
+          class="mx-auto mb-8 max-w-2xl text-lg text-slate-300 leading-relaxed"
+        >
+          لعبة ويب تعليمية تهدف إلى اختبار وتنمية معرفتك بالإسلام من خلال أسئلة
+          تفاعلية تشمل القرآن الكريم والسنة النبوية بأسلوب ممتع.
+        </p>
+
+        <button
+          id="startBtn"
+          class="rounded-lg px-8 py-3 font-bold bg-sky-400 text-slate-900 hover:bg-sky-300 transition"
+        >
+          ابدأ الآن
+        </button>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section
+      id="game"
+      class="absolute inset-0 flex items-center justify-center opacity-0 pointer-events-none scale-95 transition-all duration-700 ease-in-out"
+    >
+      <!-- Correct Answer Toast -->
+      <div
+        id="answerToast"
+        class="fixed top-6 left-1/2 -translate-x-1/2 z-50 opacity-0 scale-95 translate-y-[-10px] pointer-events-none rounded-xl bg-slate-900 border border-blue-500 px-6 py-4 text-center text-sm font-bold text-white shadow-xl transition-all duration-500"
+      ></div>
+
+      <!-- Toast -->
+      <div
+        id="toast"
+        class="fixed top-5 right-5 z-50 rounded-lg px-6 py-3 text-sm font-bold shadow-lg opacity-0 translate-y-[-10px] scale-95 pointer-events-none transition-all duration-300 ease-out"
+      ></div>
+
+      <div
+        class="w-full max-w-3xl rounded-2xl bg-slate-900/80 backdrop-blur p-8 space-y-6 shadow-xl"
+      >
+        <!-- Top Bar -->
+        <div class="relative flex items-center justify-between">
+          <!-- Close -->
+          <button
+            id="closeBtn"
+            class="text-sm text-slate-300 hover:text-white transition"
+          >
+            ❌
+          </button>
+
+          <!-- Question Number (Centered) -->
+          <div
+            class="absolute left-1/2 -translate-x-1/2 text-slate-300 font-bold text-sm"
+          >
+            السؤال: <span id="questionNumber" class="text-sky-400">1</span> /
+            <span id="totalQuestions">10</span>
+          </div>
+
+          <!-- Score -->
+          <div class="text-sky-400 font-bold flex gap-2">
+            النتيجة:
+            <p id="result">0</p>
+            / 100
+          </div>
+        </div>
+
+        <!-- Question -->
+        <div id="question" class="text-xl font-bold text-center"></div>
+
+        <!-- Choices -->
+        <div class="grid gap-4">
+          <button
+            id="choice1"
+            class="choice-btn rounded-lg border border-slate-700 p-3 hover:bg-slate-800 transition"
+          ></button>
+          <button
+            id="choice2"
+            class="choice-btn rounded-lg border border-slate-700 p-3 hover:bg-slate-800 transition"
+          ></button>
+          <button
+            id="choice3"
+            class="choice-btn rounded-lg border border-slate-700 p-3 hover:bg-slate-800 transition"
+          ></button>
+        </div>
+
+        <!-- Submit -->
+        <button
+          id="submit"
+          class="w-full rounded-lg bg-sky-400 py-3 font-bold text-slate-900 hover:bg-sky-300 transition"
+        >
+          تأكيد الإجابة
+        </button>
+      </div>
+    </section>
+
+    <script>
+      const startBtn = document.getElementById("startBtn");
+      const closeBtn = document.getElementById("closeBtn");
+      const hero = document.getElementById("hero");
+      const game = document.getElementById("game");
+      const choiceButtons = document.querySelectorAll(".choice-btn");
+      const submit = document.getElementById("submit");
+      const resultScreen = document.getElementById("result");
+      const question = document.getElementById("question");
+      const choice1 = document.getElementById("choice1");
+      const choice2 = document.getElementById("choice2");
+      const choice3 = document.getElementById("choice3");
+      const toast = document.getElementById("toast");
+      const answerToast = document.getElementById("answerToast");
+      const questionNumber = document.getElementById("questionNumber");
+      const totalQuestions = document.getElementById("totalQuestions");
+
+      let result = 0;
+      let currentQuestion = 0;
+      let answerOfUser = "";
+
+      const questionsList = [
+        {
+          question: "في أي سنة فُرضت الصلاة على المسلمين؟",
+          choices: [
+            "السنة الأولى للهجرة",
+            "السنة الثانية للهجرة",
+            "قبل الهجرة في الإسراء والمعراج",
+            "بعد فتح مكة",
+          ],
+          answer: "قبل الهجرة في الإسراء والمعراج",
+        },
+        {
+          question: "ما اسم الغار الذي كان يتعبد فيه النبي ﷺ قبل البعثة؟",
+          choices: ["غار ثور", "غار أحد", "غار حراء", "غار بدر"],
+          answer: "غار حراء",
+        },
+        {
+          question: "كم عدد سور القرآن الكريم؟",
+          choices: ["112 سورة", "113 سورة", "114 سورة", "115 سورة"],
+          answer: "114 سورة",
+        },
+        {
+          question: "من هو أول من آمن من الصبيان؟",
+          choices: [
+            "عبد الله بن عمر",
+            "علي بن أبي طالب",
+            "زيد بن حارثة",
+            "الحسن بن علي",
+          ],
+          answer: "علي بن أبي طالب",
+        },
+        {
+          question: "ما السورة التي تُسمى قلب القرآن؟",
+          choices: ["البقرة", "الرحمن", "يس", "الكهف"],
+          answer: "يس",
+        },
+        {
+          question: "في أي غزوة فُرض الصيام لأول مرة؟",
+          choices: ["غزوة بدر", "غزوة أحد", "غزوة الخندق", "غزوة تبوك"],
+          answer: "غزوة بدر",
+        },
+        {
+          question: "من هو الصحابي الملقب بـ (سيف الله المسلول)؟",
+          choices: [
+            "عمر بن الخطاب",
+            "علي بن أبي طالب",
+            "خالد بن الوليد",
+            "سعد بن أبي وقاص",
+          ],
+          answer: "خالد بن الوليد",
+        },
+        {
+          question: "كم عدد آيات سورة الفاتحة؟",
+          choices: ["6 آيات", "7 آيات", "8 آيات", "5 آيات"],
+          answer: "7 آيات",
+        },
+        {
+          question: "ما أول قبلة صلّى إليها المسلمون؟",
+          choices: [
+            "المسجد الحرام",
+            "المسجد النبوي",
+            "المسجد الأقصى",
+            "مسجد قباء",
+          ],
+          answer: "المسجد الأقصى",
+        },
+        {
+          question: "أي صلاة تُسمى الصلاة الوسطى؟",
+          choices: ["الفجر", "الظهر", "العصر", "المغرب"],
+          answer: "العصر",
+        },
+      ];
+
+      totalQuestions.textContent = questionsList.length;
+
+      function showQuestions() {
+        if (currentQuestion >= questionsList.length) {
+          // Game over
+          question.innerHTML = "انتهت اللعبة!";
+          choiceButtons.forEach((btn) => (btn.style.display = "none"));
+          submit.style.display = "none";
+          return;
+        }
+
+        // Update question number
+        questionNumber.textContent = currentQuestion + 1;
+
+        question.innerHTML = questionsList[currentQuestion].question;
+        choice1.innerHTML = questionsList[currentQuestion].choices[0];
+        choice2.innerHTML = questionsList[currentQuestion].choices[1];
+        choice3.innerHTML = questionsList[currentQuestion].choices[2];
+        choiceButtons.forEach((btn) => (btn.style.display = "block"));
+        submit.style.display = "block";
+      }
+
+      choiceButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          choiceButtons.forEach((b) =>
+            b.classList.remove("outline-2", "outline", "outline-sky-400")
+          );
+          btn.classList.add("outline-2", "outline", "outline-sky-400");
+          answerOfUser = btn.textContent;
+        });
+      });
+
+      function showToast(message, isCorrect) {
+        toast.textContent = message;
+        toast.classList.remove("bg-green-500", "bg-red-500");
+        toast.classList.add(
+          isCorrect ? "bg-green-500" : "bg-red-500",
+          "text-white"
+        );
+        toast.classList.remove(
+          "opacity-0",
+          "translate-y-[-10px]",
+          "scale-95",
+          "pointer-events-none"
+        );
+        toast.classList.add("opacity-100", "translate-y-0", "scale-100");
+
+        setTimeout(() => {
+          toast.classList.add(
+            "opacity-0",
+            "translate-y-[-10px]",
+            "scale-95",
+            "pointer-events-none"
+          );
+          toast.classList.remove("opacity-100", "translate-y-0", "scale-100");
+        }, 1500);
+      }
+
+      function showCorrectAnswer(correctAnswer) {
+        answerToast.innerHTML = `
+        إجابة خاطئة ❌<br />
+        <span class="text-green-400 mt-1 block">الإجابة الصحيحة: ${correctAnswer}</span>
+      `;
+        answerToast.classList.remove(
+          "opacity-0",
+          "scale-95",
+          "translate-y-[-10px]",
+          "pointer-events-none"
+        );
+        answerToast.classList.add("opacity-100", "scale-100", "translate-y-0");
+        setTimeout(() => {
+          answerToast.classList.remove(
+            "opacity-100",
+            "scale-100",
+            "translate-y-0"
+          );
+          answerToast.classList.add(
+            "opacity-0",
+            "scale-95",
+            "translate-y-[-10px]",
+            "pointer-events-none"
+          );
+        }, 3000);
+      }
+
+      submit.onclick = () => {
+        if (!answerOfUser) return;
+
+        const correctAnswer = questionsList[currentQuestion].answer;
+        if (answerOfUser === correctAnswer) {
+          showToast("إجابة صحيحة ✔", true);
+          result += 10;
+        } else {
+          showToast("إجابة خاطئة ✖", false);
+          showCorrectAnswer(correctAnswer);
+        }
+
+        resultScreen.textContent = result;
+        choiceButtons.forEach((btn) =>
+          btn.classList.remove("outline-2", "outline", "outline-sky-400")
+        );
+        answerOfUser = "";
+        currentQuestion++;
+        showQuestions();
+      };
+
+      startBtn.onclick = () => {
+        hero.classList.add("opacity-0", "scale-95", "pointer-events-none");
+        game.classList.remove("opacity-0", "scale-95", "pointer-events-none");
+      };
+
+      closeBtn.onclick = () => {
+        hero.classList.remove("opacity-0", "scale-95", "pointer-events-none");
+        game.classList.add("opacity-0", "scale-95", "pointer-events-none");
+
+        // Reset
+        currentQuestion = 0;
+        result = 0;
+        answerOfUser = "";
+        resultScreen.textContent = "0";
+        questionNumber.textContent = "1";
+        choiceButtons.forEach((btn) => {
+          btn.classList.remove("outline-2", "outline", "outline-sky-400");
+          btn.style.display = "block";
+        });
+        submit.style.display = "block";
+
+        showQuestions();
+      };
+
+      // Init
+      showQuestions();
+    </script>
+  </body>
+</html>
