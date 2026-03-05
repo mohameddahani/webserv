@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <title>POST Request Data</title>
+</head>
+
+<body class="min-h-screen bg-black flex items-center justify-center">
+  <!-- Card -->
+  <div class="bg-zinc-900 border border-zinc-700 rounded-xl shadow-lg p-6 w-full max-w-xl">
+
+    <!-- Title -->
+    <h1 class="text-xl font-bold text-white mb-4 text-center">
+      📩 POST Request Body
+    </h1>
+
+    <div class="mb-4">
+      <p class="text-sm text-zinc-400 mb-1">
+        Raw data :
+      </p>
+
+<!-- raw data -->
+      <pre class="bg-black text-green-400 p-3 rounded text-sm overflow-x-auto">
+email=mdahani%40student.1337.ma&password=777&remember-me=on        </pre>
+  </div>
+  <div>
+    <p class="text-sm text-zinc-400 mb-2 mt-4">
+      Parsed fields :
+    </p>
+    <div class="space-y-2">
+      <!-- parsed data -->
+<div class="flex justify-between bg-zinc-800 px-4 py-2 rounded">
+<span class="text-blue-400 font-medium">email</span><span class="text-white">mdahani%40student.1337.ma</span></div>
+<div class="flex justify-between bg-zinc-800 px-4 py-2 rounded">
+<span class="text-blue-400 font-medium">password</span><span class="text-white">777</span></div>
+<div class="flex justify-between bg-zinc-800 px-4 py-2 rounded">
+<span class="text-blue-400 font-medium">remember-me</span><span class="text-white">on</span></div>
+    </div>
+  </div>
+  <!-- Redirect Button -->
+  <div class="mt-6 text-center">
+    <button id="goBtn"
+      class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded transition">
+      Go to Game (3)
+    </button>
+  </div>
+  <script>
+    let seconds = 3;
+    const btn = document.getElementById('goBtn');
+
+    const timer = setInterval(() => {
+      seconds--;
+      btn.textContent = `Go to Game (${seconds})`;
+
+      if (seconds <= 0) {
+        clearInterval(timer);
+        window.location.href = '/game.html';
+      }
+    }, 1000);
+
+    btn.addEventListener('click', () => {
+      window.location.href = '/game.html';
+    });
+  </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>500 INTERNAL SERVER ERROR</title>
+  </head>
+  <body>
+    <main
+      class="h-screen w-full flex flex-col justify-center items-center bg-[#1A2238] relative"
+    >
+      <h1 class="text-9xl font-extrabold text-white tracking-widest">500</h1>
+
+      <h3 class="bg-red-500 px-2 text-sm rounded rotate-12 absolute">
+        Internal Server Error
+      </h3>
+
+      <p class="text-gray-300 mt-6 text-center max-w-md">
+        The server encountered an unexpected condition that prevented it from
+        fulfilling the request.
+      </p>
+
+      <a
+        href="/"
+        class="mt-8 relative inline-block text-sm font-medium text-red-500 group focus:outline-none focus:ring"
+      >
+        <span
+          class="absolute inset-0 transition-transform translate-x-0.5 translate-y-0.5 bg-red-500 group-hover:translate-x-0 group-hover:translate-y-0"
+        ></span>
+
+        <span
+          class="relative block px-8 py-3 bg-[#1A2238] border border-current"
+        >
+          Go Home
+        </span>
+      </a>
+    </main>
+  </body>
+</html>
