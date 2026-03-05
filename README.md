@@ -226,8 +226,8 @@ webserv/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/Mohamed-ait-alla/42-webserv.git
-cd 42-webserv
+git clone https://github.com/mohameddahani/webserv.git
+cd webserv
 ```
 
 ### 2. Compile
@@ -386,7 +386,7 @@ We welcome contributions! Here's how you can help:
 
 ### Reporting Bugs
 
-1. Check if the bug is already reported in [Issues](https://github.com/Mohamed-ait-alla/42-webserv/issues)
+1. Check if the bug is already reported in [Issues](https://github.com/mohameddahani/webserv/issues)
 2. Create a new issue with:
    - Clear title and description
    - Steps to reproduce
@@ -395,7 +395,7 @@ We welcome contributions! Here's how you can help:
 
 ### Suggesting Features
 
-1. Open a [Feature Request](https://github.com/Mohamed-ait-alla/42-webserv/issues/new)
+1. Open a [Feature Request](https://github.com/mohameddahani/webserv/issues/new)
 2. Explain the use case
 3. Describe the proposed solution
 
@@ -483,13 +483,13 @@ This project was developed as part of the 42 Common Core curriculum at 1337 Scho
 
 ## Project Stats
 
-![GitHub stars](https://img.shields.io/github/stars/Mohamed-ait-alla/42-webserv?style=social)
-![GitHub forks](https://img.shields.io/github/forks/Mohamed-ait-alla/42-webserv?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/Mohamed-ait-alla/42-webserv?style=social)
+![GitHub stars](https://img.shields.io/github/stars/mohameddahani/webserv?style=social)
+![GitHub forks](https://img.shields.io/github/forks/mohameddahani/webserv?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/mohameddahani/webserv?style=social)
 
 
-![Code size](https://img.shields.io/github/languages/code-size/Mohamed-ait-alla/42-webserv)
-![Last commit](https://img.shields.io/github/last-commit/Mohamed-ait-alla/42-webserv)
+![Code size](https://img.shields.io/github/languages/code-size/mohameddahani/webserv)
+![Last commit](https://img.shields.io/github/last-commit/mohameddahani/webserv)
 
 ---
 
